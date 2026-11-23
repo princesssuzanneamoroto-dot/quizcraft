@@ -1,0 +1,3007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#F8FAFC">
+    <script>
+        // Set the theme before first paint so there is no flash of the wrong theme.
+        (function () {
+            var theme = null;
+            try {
+                var saved = localStorage.getItem('quizcraft_theme');
+                if (saved === 'light' || saved === 'dark') theme = saved;
+            } catch (e) {}
+            if (!theme) {
+                try {
+                    theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                } catch (e) {
+                    theme = 'light';
+                }
+            }
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    <title>QuizCraft - Turn Any Lesson Into an Instant Quiz</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-light: #EEF2FF;
+            --teacher-color: #0D9488;
+            --teacher-bg: #CCFBF1;
+            --student-color: #D97706;
+            --student-bg: #FEF3C7;
+            --danger: #DC2626;
+            --text-dark: #0F172A;
+            --text-muted: #475569;
+            --bg-light: #F8FAFC;
+            --card-bg: #FFFFFF;
+            --border-color: #E2E8F0;
+            --radius-lg: 20px;
+            --radius-md: 12px;
+            --shadow-soft: 0 10px 30px -10px rgba(79, 70, 229, 0.1);
+            --shadow-hover: 0 20px 40px -15px rgba(79, 70, 229, 0.2);
+            --nav-bg: rgba(255, 255, 255, 0.85);
+            --invalid-bg: #FEF2F2;
+            --dz-border: #A5B4FC;
+            --toast-bg: #0F172A;
+            --toast-fg: #FFFFFF;
+            color-scheme: light;
+        }
+
+        :root[data-theme="dark"] {
+            --primary: #818CF8;
+            --primary-light: rgba(129, 140, 248, 0.14);
+            --teacher-color: #2DD4BF;
+            --teacher-bg: rgba(45, 212, 191, 0.16);
+            --student-color: #FBBF24;
+            --student-bg: rgba(251, 191, 36, 0.16);
+            --danger: #F87171;
+            --text-dark: #F1F5F9;
+            --text-muted: #94A3B8;
+            --bg-light: #0B1120;
+            --card-bg: #111827;
+            --border-color: #243044;
+            --shadow-soft: 0 10px 30px -10px rgba(0, 0, 0, 0.55);
+            --shadow-hover: 0 20px 40px -15px rgba(0, 0, 0, 0.65);
+            --nav-bg: rgba(17, 24, 39, 0.8);
+            --invalid-bg: rgba(248, 113, 113, 0.1);
+            --dz-border: rgba(129, 140, 248, 0.5);
+            --toast-bg: #F1F5F9;
+            --toast-fg: #0F172A;
+            color-scheme: dark;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        [hidden] { display: none !important; }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 84px;
+        }
+
+        body {
+            color: var(--text-dark);
+            background-color: var(--bg-light);
+            line-height: 1.6;
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        :focus-visible {
+            outline: 3px solid rgba(79, 70, 229, 0.45);
+            outline-offset: 2px;
+        }
+
+        h1[tabindex="-1"]:focus { outline: none; }
+
+        .skip-link {
+            position: absolute;
+            left: -9999px;
+            top: 0.5rem;
+            background: var(--primary);
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            z-index: 300;
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .skip-link:focus { left: 0.5rem; }
+
+        /* ---------- Navigation ---------- */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 6%;
+            background: var(--nav-bg);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            letter-spacing: -0.02em;
+            text-decoration: none;
+        }
+
+        .logo-badge {
+            background: linear-gradient(135deg, var(--primary) 0%, #D946EF 100%);
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            font-weight: 800;
+        }
+
+        .brand-group {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            min-width: 0;
+        }
+
+        .page-name {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.9rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--primary);
+            white-space: nowrap;
+        }
+
+        .page-name::before {
+            content: "";
+            width: 1px;
+            height: 22px;
+            background: var(--border-color);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .nav-links a,
+        .nav-link-btn {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: color 0.15s;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .nav-links a:hover,
+        .nav-link-btn:hover {
+            color: var(--primary);
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            width: 42px;
+            height: 42px;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-dark);
+        }
+
+        .menu-toggle svg {
+            width: 22px;
+            height: 22px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4F46E5 0%, #4338CA 100%);
+            color: white !important;
+            padding: 0.65rem 1.25rem;
+            border-radius: 9999px;
+            font-weight: 700;
+            font-size: 0.875rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
+        }
+
+        /* ---------- Views ---------- */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .view {
+            flex: 1;
+        }
+
+        .view.active {
+            animation: viewIn 0.25s ease;
+        }
+
+        @keyframes viewIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: none; }
+        }
+
+        /* ---------- Home: hero ---------- */
+        .hero {
+            padding: 4rem 5% 3rem 5%;
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .hero-pills {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .pill {
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 0.35rem 0.85rem;
+            border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .pill-teacher {
+            background: var(--teacher-bg);
+            color: var(--teacher-color);
+        }
+
+        .pill-student {
+            background: var(--student-bg);
+            color: var(--student-color);
+        }
+
+        .hero h1 {
+            font-size: 3.25rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.15;
+            margin-bottom: 1.25rem;
+            color: var(--text-dark);
+        }
+
+        .hero h1 span,
+        .metrics-badge {
+            color: var(--primary);
+            background: linear-gradient(135deg, var(--primary) 0%, #D946EF 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.15rem;
+            color: var(--text-muted);
+            margin-bottom: 2.5rem;
+            max-width: 650px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .drop-zone {
+            background: var(--card-bg);
+            border: 2px dashed var(--dz-border);
+            border-radius: var(--radius-lg);
+            padding: 3.5rem 2rem;
+            transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+            cursor: pointer;
+            box-shadow: var(--shadow-soft);
+            max-width: 650px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .drop-zone:hover, .drop-zone.drag-over {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-hover);
+            background: var(--primary-light);
+        }
+
+        .drop-zone.drag-over {
+            transform: translateY(-2px);
+        }
+
+        .drop-zone-icon {
+            width: 56px;
+            height: 56px;
+            background: var(--primary-light);
+            border-radius: 16px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.25rem auto;
+        }
+
+        .drop-zone-icon svg {
+            width: 28px;
+            height: 28px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .drop-zone-text {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 0.35rem;
+        }
+
+        .drop-zone-subtext {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-list {
+            margin-top: 1.25rem;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            cursor: default;
+        }
+
+        .file-list:empty {
+            display: none;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            background: var(--bg-light);
+            border: 1px solid var(--border-color);
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-md);
+            font-size: 0.85rem;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            min-width: 0;
+        }
+
+        .file-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .file-size {
+            color: var(--text-muted);
+            font-weight: 400;
+            white-space: nowrap;
+        }
+
+        .remove-file {
+            color: #EF4444;
+            cursor: pointer;
+            font-size: 1.25rem;
+            line-height: 1;
+            padding: 0.125rem 0.5rem;
+            border-radius: 6px;
+            background: none;
+            border: none;
+            flex-shrink: 0;
+        }
+
+        .remove-file:hover {
+            background: var(--invalid-bg);
+        }
+
+        /* ---------- Home: features ---------- */
+        .dual-benefits {
+            padding: 5rem 6%;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .section-header h2 {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .roles-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .role-card {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 2.5rem;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .role-card.teacher {
+            border-top: 5px solid var(--teacher-color);
+        }
+
+        .role-card.student {
+            border-top: 5px solid var(--student-color);
+        }
+
+        .role-badge {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            margin-bottom: 1rem;
+        }
+
+        .teacher .role-badge {
+            background: var(--teacher-bg);
+            color: var(--teacher-color);
+        }
+
+        .student .role-badge {
+            background: var(--student-bg);
+            color: var(--student-color);
+        }
+
+        .role-card h3 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        .role-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .role-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        .role-list li strong {
+            color: var(--text-dark);
+        }
+
+        .check-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 0.15rem;
+            font-size: 0.75rem;
+            font-weight: 800;
+        }
+
+        .teacher .check-icon {
+            background: var(--teacher-bg);
+            color: var(--teacher-color);
+        }
+
+        .student .check-icon {
+            background: var(--student-bg);
+            color: var(--student-color);
+        }
+
+        .how-it-works {
+            padding: 5rem 6%;
+            background: var(--card-bg);
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .step-card {
+            padding: 1.5rem;
+            border-radius: var(--radius-md);
+            background: var(--bg-light);
+            border: 1px solid var(--border-color);
+        }
+
+        .step-icon {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .step-card h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-card p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .social-proof {
+            padding: 5rem 6%;
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .metrics-badge {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+
+        .testimonial {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            font-style: italic;
+            line-height: 1.7;
+        }
+
+        .testimonial strong {
+            display: block;
+            margin-top: 1rem;
+            font-style: normal;
+            font-size: 0.95rem;
+            color: var(--text-dark);
+        }
+
+        /* ---------- Auth views ---------- */
+        .view-auth {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 1.5rem;
+        }
+
+        .auth-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .auth-header h1 {
+            font-size: 1.75rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.5rem;
+        }
+
+        .auth-header p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+            border: 0;
+        }
+
+        .form-group label,
+        .form-group legend {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text-dark);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+            color: var(--text-dark);
+            background: var(--bg-light);
+            transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--card-bg);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+        }
+
+        .form-control.invalid {
+            border-color: var(--danger);
+            background: var(--invalid-bg);
+        }
+
+        .form-control.invalid:focus {
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+        }
+
+        .field-error {
+            color: var(--danger);
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 0.4rem;
+            min-height: 0;
+        }
+
+        .field-error:empty {
+            display: none;
+        }
+
+        .password-wrap {
+            position: relative;
+        }
+
+        .password-wrap .form-control {
+            padding-right: 4.5rem;
+        }
+
+        .toggle-pw {
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 0.8rem;
+            cursor: pointer;
+            padding: 0.4rem 0.6rem;
+            border-radius: 8px;
+        }
+
+        .toggle-pw:hover {
+            background: var(--primary-light);
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .forgot-password {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .forgot-password:hover {
+            text-decoration: underline;
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: linear-gradient(135deg, #4F46E5 0%, #4338CA 100%);
+            color: white;
+            padding: 0.75rem 1.25rem;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            font-size: 0.95rem;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+        }
+
+        .btn-submit:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.7;
+            cursor: progress;
+        }
+
+        .auth-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .auth-footer a {
+            color: var(--primary);
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .auth-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .auth-footer p + p {
+            margin-top: 0.5rem;
+        }
+
+        .role-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .role-option {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .role-option input {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .role-option span {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            padding: 0.7rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background: var(--bg-light);
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+        }
+
+        .role-option.teacher input:checked + span {
+            border-color: var(--teacher-color);
+            background: var(--teacher-bg);
+            color: var(--teacher-color);
+        }
+
+        .role-option.student input:checked + span {
+            border-color: var(--student-color);
+            background: var(--student-bg);
+            color: var(--student-color);
+        }
+
+        .role-option input:focus-visible + span {
+            outline: 3px solid rgba(79, 70, 229, 0.45);
+            outline-offset: 2px;
+        }
+
+        /* ---------- Premium auth layout ---------- */
+        .view-auth {
+            padding: 3.5rem 1.5rem;
+            background:
+                radial-gradient(60% 50% at 12% 0%, rgba(79, 70, 229, 0.10), transparent 70%),
+                radial-gradient(50% 45% at 92% 100%, rgba(217, 70, 239, 0.09), transparent 70%);
+        }
+
+        .auth-shell {
+            display: grid;
+            grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+            width: 100%;
+            max-width: 1060px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow:
+                0 1px 2px rgba(15, 23, 42, 0.04),
+                0 24px 48px -24px rgba(49, 46, 129, 0.28),
+                0 60px 90px -50px rgba(79, 70, 229, 0.25);
+        }
+
+        .auth-aside {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 2.5rem;
+            padding: 2.75rem;
+            color: #fff;
+            overflow: hidden;
+            background:
+                radial-gradient(90% 60% at 100% 0%, rgba(217, 70, 239, 0.45), transparent 60%),
+                radial-gradient(80% 60% at 0% 100%, rgba(99, 102, 241, 0.55), transparent 60%),
+                linear-gradient(160deg, #1E1B4B 0%, #312E81 55%, #4338CA 100%);
+        }
+
+        .auth-aside::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+            background-size: 40px 40px;
+            -webkit-mask-image: radial-gradient(circle at 30% 15%, #000, transparent 75%);
+            mask-image: radial-gradient(circle at 30% 15%, #000, transparent 75%);
+            pointer-events: none;
+        }
+
+        .auth-aside > * {
+            position: relative;
+        }
+
+        .aside-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .aside-brand .logo-badge {
+            width: 36px;
+            height: 36px;
+            border-radius: 11px;
+            background: #fff;
+            color: #4F46E5;
+            font-size: 1.05rem;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+        }
+
+        .aside-title {
+            font-size: 1.9rem;
+            line-height: 1.2;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            margin-bottom: 0.75rem;
+        }
+
+        .aside-text {
+            color: rgba(255, 255, 255, 0.75);
+            font-size: 0.95rem;
+        }
+
+        .aside-points {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+            margin-top: 1.5rem;
+        }
+
+        .aside-points li {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.88);
+        }
+
+        .aside-points .dot {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.16);
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 800;
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+
+        .aside-quote {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 16px;
+            padding: 1.1rem 1.25rem;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.9);
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
+        }
+
+        .aside-quote strong {
+            display: block;
+            margin-top: 0.6rem;
+            font-size: 0.8rem;
+            color: #fff;
+        }
+
+        .auth-brand {
+            display: none;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 1.15rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 1.5rem;
+        }
+
+        .auth-brand .logo-badge {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+
+        .auth-card {
+            max-width: none;
+            border: 0;
+            border-radius: 0;
+            box-shadow: none;
+            padding: 3.25rem 3.25rem;
+            align-self: center;
+        }
+
+        .auth-header {
+            text-align: left;
+            margin-bottom: 1.75rem;
+        }
+
+        .auth-header h1 {
+            font-size: 2rem;
+            line-height: 1.2;
+        }
+
+        .auth-card .form-control {
+            padding: 0.85rem 1rem;
+            border-radius: 14px;
+        }
+
+        .auth-card .btn-submit {
+            padding: 0.95rem 1.25rem;
+            border-radius: 14px;
+            font-size: 1rem;
+        }
+
+        .auth-card .role-option span {
+            padding: 0.8rem;
+            border-radius: 14px;
+        }
+
+        @media (max-width: 900px) {
+            .view-auth { padding: 2rem 1.25rem 3rem; }
+
+            .auth-shell {
+                grid-template-columns: 1fr;
+                max-width: 480px;
+                border-radius: 24px;
+            }
+
+            .auth-aside { display: none; }
+
+            .auth-brand { display: flex; }
+
+            .auth-card { padding: 2rem 1.5rem; }
+
+            .auth-header h1 { font-size: 1.65rem; }
+        }
+
+        #view-home {
+            background: radial-gradient(70% 40% at 50% 0%, rgba(79, 70, 229, 0.09), transparent 70%);
+        }
+
+        /* ---------- Theme toggle + dark-mode details ---------- */
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+        }
+
+        .nav-links { order: 1; }
+        .theme-toggle { order: 2; }
+        .menu-toggle { order: 3; }
+
+        .theme-toggle {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            color: var(--text-dark);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: border-color 0.15s ease, color 0.15s ease;
+        }
+
+        .theme-toggle:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .theme-toggle svg {
+            width: 20px;
+            height: 20px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .theme-toggle .icon-sun { display: none; }
+        :root[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+        :root[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+
+        .menu-toggle { background: var(--card-bg); }
+
+        .form-control::placeholder {
+            color: var(--text-muted);
+            opacity: 0.7;
+        }
+
+        input:-webkit-autofill,
+        input:-webkit-autofill:focus {
+            -webkit-text-fill-color: var(--text-dark);
+            box-shadow: 0 0 0 1000px var(--bg-light) inset;
+            caret-color: var(--text-dark);
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+            html.theme-anim *,
+            html.theme-anim *::before,
+            html.theme-anim *::after {
+                transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease !important;
+            }
+        }
+
+        /* Header: page label and Create Account button, high contrast in both themes */
+        .page-name {
+            padding: 0.3rem 0.85rem;
+            border-radius: 9999px;
+            background: #E0E7FF;
+            border: 1px solid #A5B4FC;
+            color: #312E81;
+            font-weight: 700;
+        }
+
+        .page-name::before {
+            display: none;
+        }
+
+        :root[data-theme="dark"] .page-name {
+            background: rgba(129, 140, 248, 0.18);
+            border-color: rgba(129, 140, 248, 0.4);
+            color: #E0E7FF;
+        }
+
+        .nav-links a.btn-primary,
+        .nav-links a.btn-primary:hover {
+            background-color: #4F46E5;
+            color: #FFFFFF !important;
+            -webkit-text-fill-color: #FFFFFF;
+        }
+
+        @media (max-width: 768px) {
+            .nav-right { gap: 0.6rem; }
+        }
+
+        @media (max-width: 480px) {
+            nav { padding: 1rem 4%; }
+            .logo { font-size: 1.05rem; }
+            .page-name { font-size: 0.8rem; padding: 0.25rem 0.65rem; }
+            .brand-group { gap: 0.5rem; }
+        }
+
+        /* ---------- Social sign-in ---------- */
+        .social-auth {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .btn-social {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            padding: 0.8rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            background: var(--card-bg);
+            color: var(--text-dark);
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+        }
+
+        .btn-social:hover:not(:disabled) {
+            border-color: var(--primary);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .btn-social:disabled {
+            opacity: 0.65;
+            cursor: progress;
+        }
+
+        .btn-social svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            margin-bottom: 1.25rem;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .auth-divider::before,
+        .auth-divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--border-color);
+        }
+
+        @media (max-width: 380px) {
+            .social-auth { grid-template-columns: 1fr; }
+        }
+
+        .nav-user {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .nav-user img {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid var(--border-color);
+        }
+
+        /* ---------- Role choice + dashboards ---------- */
+        .role-pick{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:780px;margin:0 auto 1.5rem}
+        .role-tile{display:block;text-align:left;text-decoration:none;color:var(--text-dark);background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:2rem;box-shadow:var(--shadow-soft);transition:transform .2s ease,box-shadow .2s ease}
+        .role-tile:hover{transform:translateY(-4px);box-shadow:var(--shadow-hover)}
+        .role-tile.teacher{border-top:5px solid var(--teacher-color)}.role-tile.student{border-top:5px solid var(--student-color)}
+        .rt-icon{font-size:2rem;margin-bottom:.75rem}.role-tile h2{font-size:1.35rem;margin-bottom:.4rem}
+        .role-tile p{font-size:.9rem;color:var(--text-muted);margin:0 0 1.25rem;max-width:none}
+        .rt-btn{font-weight:700;font-size:.9rem}.teacher .rt-btn{color:var(--teacher-color)}.student .rt-btn{color:var(--student-color)}
+        .hero .hero-note{font-size:.9rem;margin:0 auto}.hero-note a,.role-note a{color:var(--primary);font-weight:700;text-decoration:none}
+        .role-note{font-size:.85rem;font-weight:600;margin-bottom:.4rem}
+        body.in-dash nav,body.in-dash footer{display:none}
+        #view-dash{background:linear-gradient(135deg,#E9E7FF,#C9C4FF);padding:1.25rem}
+        :root[data-theme="dark"] #view-dash{background:linear-gradient(135deg,#0B1120,#1E1B4B)}
+        .dash{display:grid;grid-template-columns:230px 1fr;min-height:calc(100vh - 2.5rem);background:var(--bg-light);border-radius:24px;overflow:hidden;box-shadow:0 30px 60px -30px rgba(49,46,129,.4)}
+        .side{background:#1B2236;color:#cbd5e1;padding:1.25rem .9rem;display:flex;flex-direction:column;gap:.3rem}
+        .side .brand{display:flex;gap:.7rem;align-items:center;color:#fff;font-weight:800;margin-bottom:1.25rem;padding:.25rem .4rem}
+        .side .brand small{display:block;font-weight:500;font-size:.7rem;color:#94a3b8}
+        .side button{display:flex;gap:.7rem;align-items:center;width:100%;background:none;border:0;color:inherit;padding:.7rem .85rem;border-radius:10px;font-weight:600;font-size:.88rem;cursor:pointer;text-align:left}
+        .side button:hover{background:rgba(255,255,255,.07)}.side button.on{background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff}
+        .side .out{margin-top:auto;color:#f87171}
+        .dmain{padding:1.25rem 1.5rem;min-width:0}
+        .dtop{display:flex;gap:.75rem;align-items:center;margin-bottom:1.25rem}
+        .dtop input{flex:1;max-width:420px;padding:.7rem 1rem;border:1px solid var(--border-color);border-radius:12px;background:var(--card-bg);color:var(--text-dark)}
+        .dtop .sp{flex:1}.ic{width:38px;height:38px;border-radius:50%;border:1px solid var(--border-color);background:var(--card-bg);cursor:pointer;color:var(--text-dark)}
+        .chip{display:flex;align-items:center;gap:.6rem;font-size:.8rem;font-weight:700}
+        .av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#D946EF);color:#fff;display:grid;place-items:center;font-weight:800}
+        .dhead{display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap;margin-bottom:1.25rem}
+        .dhead h1{font-size:1.6rem}.dhead p{color:var(--text-muted);font-size:.85rem}
+        .tiles{display:flex;gap:.75rem;flex-wrap:wrap}
+        .tile{background:var(--primary-light);color:var(--primary);border:0;border-radius:12px;padding:.8rem 1.1rem;font-weight:700;font-size:.8rem;cursor:pointer;display:grid;gap:.3rem;justify-items:center;min-width:115px}
+        .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1rem;margin-bottom:1.25rem}
+        .stat{background:var(--card-bg);border:1px solid var(--border-color);border-radius:16px;padding:1rem;display:flex;gap:.9rem;align-items:center}
+        .stat .si{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;font-size:1.4rem}
+        .stat b{font-size:1.6rem;display:block;line-height:1.1}.stat span{font-size:.8rem;color:var(--text-muted)}
+        .cols{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+        .panel{background:var(--card-bg);border:1px solid var(--border-color);border-radius:16px;padding:1.1rem 1.25rem;min-width:0}
+        .panel h2{font-size:1.05rem;margin-bottom:.5rem;display:flex;justify-content:space-between;align-items:center}
+        .panel h2 a{font-size:.75rem;color:var(--primary);cursor:pointer;font-weight:700}
+        .row{display:flex;justify-content:space-between;align-items:center;gap:.75rem;padding:.7rem 0;border-top:1px solid var(--border-color);font-size:.85rem}
+        .row small,.tbl small{display:block;color:var(--text-muted);font-size:.75rem}
+        .badge{font-size:.72rem;font-weight:700;padding:.2rem .6rem;border-radius:99px;background:var(--primary-light);color:var(--primary);white-space:nowrap}
+        .badge.ok{background:rgba(16,185,129,.15);color:#059669}.badge.warn{background:rgba(245,158,11,.18);color:#B45309}
+        .btn-s{border:0;border-radius:10px;padding:.5rem .85rem;font-weight:700;font-size:.78rem;cursor:pointer;background:#4F46E5;color:#fff}
+        .btn-s.ghost{background:var(--primary-light);color:var(--primary)}.btn-s.red{background:rgba(239,68,68,.12);color:#DC2626}
+        .bar{height:8px;border-radius:9px;background:var(--border-color);overflow:hidden;min-width:90px}.bar i{display:block;height:100%;background:linear-gradient(90deg,#6366F1,#D946EF)}
+        .tbl{width:100%;border-collapse:collapse;font-size:.85rem}.tbl th,.tbl td{text-align:left;padding:.65rem .5rem;border-top:1px solid var(--border-color)}
+        .qb{display:grid;gap:.75rem}.qcard{border:1px solid var(--border-color);border-radius:14px;padding:1rem;background:var(--bg-light)}
+        .opt{display:flex;gap:.5rem;align-items:center;margin-top:.45rem}
+        .dash input[type=text]{width:100%;padding:.65rem .8rem;border:1px solid var(--border-color);border-radius:10px;background:var(--card-bg);color:var(--text-dark)}
+        .choice{display:flex;gap:.6rem;align-items:center;padding:.65rem .8rem;border:1px solid var(--border-color);border-radius:10px;margin-top:.45rem;cursor:pointer;font-size:.88rem}
+        .choice:has(input:checked){border-color:var(--primary);background:var(--primary-light)}
+        .empty{color:var(--text-muted);font-size:.85rem;padding:.75rem 0}
+        @media(max-width:900px){#view-dash{padding:.6rem}.dash{grid-template-columns:1fr}.side{flex-direction:row;overflow-x:auto;padding:.6rem}.side .brand{display:none}.side button{width:auto;white-space:nowrap}.side .out{margin:0 0 0 auto}.cols{grid-template-columns:1fr}.dmain{padding:1rem}}
+        @media(max-width:700px){.role-pick{grid-template-columns:1fr}}
+
+        .dash select,.dash textarea,.dash input[type=number],.dash input[type=datetime-local],.dash input[type=file]{width:100%;padding:.6rem .8rem;border:1px solid var(--border-color);border-radius:10px;background:var(--card-bg);color:var(--text-dark);font-size:.88rem}
+        .dash textarea{resize:vertical}.dash input[type=checkbox]{width:auto}.qcard .qty{width:auto}
+        .fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.75rem}.fg label{font-size:.78rem;font-weight:700;display:grid;gap:.3rem}
+        .code{font-family:ui-monospace,monospace;font-weight:800;letter-spacing:.15em;background:var(--primary-light);color:var(--primary);padding:.2rem .6rem;border-radius:8px}
+
+        /* ---------- Footer ---------- */
+        footer {
+            padding: 4rem 6% 2rem 6%;
+            background-color: var(--card-bg);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            max-width: 1100px;
+            margin: 0 auto 3rem auto;
+        }
+
+        .footer-brand h3 {
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-brand p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .footer-group {
+            display: flex;
+            gap: 4rem;
+        }
+
+        .footer-links h4 {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+            color: var(--text-dark);
+        }
+
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            display: block;
+            margin-bottom: 0.65rem;
+            font-size: 0.875rem;
+            transition: color 0.15s;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+
+        .copyright {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* ---------- Toasts ---------- */
+        .toast-stack {
+            position: fixed;
+            left: 50%;
+            bottom: 1.5rem;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            z-index: 1000;
+            width: min(92vw, 420px);
+            pointer-events: none;
+        }
+
+        .toast {
+            background: var(--toast-bg);
+            color: var(--toast-fg);
+            padding: 0.8rem 1rem;
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            font-weight: 600;
+            box-shadow: 0 10px 30px -8px rgba(15, 23, 42, 0.4);
+            border-left: 4px solid var(--primary);
+            animation: toastIn 0.25s ease;
+        }
+
+        .toast.success { border-left-color: #10B981; }
+        .toast.error { border-left-color: #EF4444; }
+        .toast.leaving { opacity: 0; transform: translateY(6px); transition: opacity 0.25s ease, transform 0.25s ease; }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: none; }
+        }
+
+        /* ---------- Responsive ---------- */
+        @media (max-width: 768px) {
+            .menu-toggle {
+                display: inline-flex;
+            }
+
+            .nav-links {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+                padding: 1.25rem 6% 1.5rem;
+                background: var(--card-bg);
+                border-bottom: 1px solid var(--border-color);
+                box-shadow: 0 16px 24px -16px rgba(15, 23, 42, 0.2);
+            }
+
+            .nav-links.open {
+                display: flex;
+            }
+
+            .nav-links a,
+            .nav-link-btn {
+                font-size: 1rem;
+                text-align: left;
+                padding: 0.25rem 0;
+            }
+
+            .nav-links .btn-primary {
+                padding: 0.8rem 1.25rem;
+                text-align: center;
+            }
+
+            .hero { padding-top: 2.5rem; }
+
+            .hero h1 {
+                font-size: 2.25rem;
+            }
+
+            .drop-zone { padding: 2.5rem 1.25rem; }
+
+            .roles-grid,
+            .steps-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .role-card { padding: 1.75rem; }
+
+            .auth-card { padding: 2rem 1.5rem; }
+
+            .footer-content {
+                flex-direction: column;
+                gap: 2.5rem;
+            }
+
+            .footer-group { gap: 2.5rem; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <nav>
+        <div class="brand-group">
+            <a href="#/" class="logo" aria-label="QuizCraft home">
+                <div class="logo-badge">Q</div>
+                QuizCraft
+            </a>
+            <span class="page-name" id="pageName" hidden></span>
+        </div>
+
+        <div class="nav-right">
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode" title="Switch to dark mode">
+            <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+        </button>
+
+        <button class="menu-toggle" id="menuToggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
+        </button>
+
+        <div class="nav-links" id="navLinks">
+            <a href="#/login" id="navLogin">Log In</a>
+            <span class="nav-user" id="navUser" hidden></span>
+            <button type="button" class="nav-link-btn" id="navLogout" hidden>Log Out</button>
+            <a href="#/signup" class="btn-primary" id="navCta">Create Account</a>
+        </div>
+        </div>
+    </nav>
+
+    <main id="main">
+
+        <!-- ================= HOME ================= -->
+        <div class="view" id="view-home" data-view="home">
+            <section class="hero">
+                <h1 tabindex="-1" data-focus>Welcome to <span>QuizCraft</span></h1>
+                <p>Choose how you want to continue.</p>
+                <div class="role-pick">
+                    <a class="role-tile teacher" href="#/login/teacher">
+                        <div class="rt-icon" aria-hidden="true">🍎</div>
+                        <h2>I'm a Teacher</h2>
+                        <p>Create quizzes, manage them, and track your students' results.</p>
+                        <span class="rt-btn">Continue as Teacher →</span>
+                    </a>
+                    <a class="role-tile student" href="#/login/student">
+                        <div class="rt-icon" aria-hidden="true">🎓</div>
+                        <h2>I'm a Student</h2>
+                        <p>Take quizzes, see your scores, and follow your progress.</p>
+                        <span class="rt-btn">Continue as Student →</span>
+                    </a>
+                </div>
+                <p class="hero-note">New here? <a href="#/signup/teacher">Sign up as Teacher</a> · <a href="#/signup/student">Sign up as Student</a></p>
+            </section>
+        </div>
+
+        <!-- ================= LOG IN ================= -->
+        <div class="view view-auth" id="view-login" data-view="login" hidden>
+            <div class="auth-shell">
+            <aside class="auth-aside">
+                <div class="aside-brand"><div class="logo-badge">Q</div>QuizCraft</div>
+                <div>
+                    <h2 class="aside-title">Pick up right where you left off.</h2>
+                    <p class="aside-text">Your quizzes, flashcards, and study material are waiting for you.</p>
+                    <ul class="aside-points">
+                        <li><span class="dot" aria-hidden="true">✓</span>Turn any lesson into a quiz in seconds</li>
+                        <li><span class="dot" aria-hidden="true">✓</span>Quizzes, scores, and progress in one place</li>
+                        <li><span class="dot" aria-hidden="true">✓</span>Built for both teachers and students</li>
+                    </ul>
+                </div>
+                <div class="aside-quote">
+                    "QuizCraft cuts my test creation time down from hours to minutes."
+                    <strong>— Sarah T., High School Educator &amp; Mentor</strong>
+                </div>
+            </aside>
+
+            <div class="auth-card">
+                <div class="auth-brand"><div class="logo-badge">Q</div>QuizCraft</div>
+                <div class="auth-header">
+                    <h1 tabindex="-1" data-focus>Welcome Back</h1>
+                    <p class="role-note"></p>
+                    <p>Log in to access your quizzes and study material</p>
+                </div>
+
+                <div class="social-auth">
+                    <button type="button" class="btn-social" data-provider="google" aria-label="Log in with Google">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.46a5.52 5.52 0 0 1-2.4 3.62v3h3.88c2.27-2.09 3.58-5.17 3.58-8.81z"/>
+                            <path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.94-2.91l-3.88-3a7.2 7.2 0 0 1-10.7-3.78H1.36v3.1A12 12 0 0 0 12 24z"/>
+                            <path fill="#FBBC05" d="M5.36 14.31a7.2 7.2 0 0 1 0-4.62v-3.1H1.36a12 12 0 0 0 0 10.82l4-3.1z"/>
+                            <path fill="#EA4335" d="M12 4.77c1.76 0 3.34.61 4.59 1.8l3.44-3.44A11.5 11.5 0 0 0 12 0 12 12 0 0 0 1.36 6.59l4 3.1A7.2 7.2 0 0 1 12 4.77z"/>
+                        </svg>
+                        <span>Google</span>
+                    </button>
+                    <button type="button" class="btn-social" data-provider="facebook" aria-label="Log in with Facebook">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill="#1877F2" d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07c0 6.03 4.39 11.03 10.13 11.93v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.69.24 2.69.24v2.97h-1.52c-1.49 0-1.96.93-1.96 1.88v2.26h3.33l-.53 3.49h-2.8V24C19.61 23.1 24 18.1 24 12.07z"/>
+                        </svg>
+                        <span>Facebook</span>
+                    </button>
+                </div>
+
+                <div class="auth-divider">or continue with email</div>
+
+                <form id="loginForm" novalidate>
+                    <div class="form-group">
+                        <label for="loginEmail">Email Address</label>
+                        <input type="email" id="loginEmail" class="form-control" placeholder="name@example.com" autocomplete="email" aria-describedby="loginEmailError">
+                        <p class="field-error" id="loginEmailError" role="alert"></p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <div class="password-wrap">
+                            <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" autocomplete="current-password" aria-describedby="loginPasswordError">
+                            <button type="button" class="toggle-pw" data-target="loginPassword" aria-label="Show password">Show</button>
+                        </div>
+                        <p class="field-error" id="loginPasswordError" role="alert"></p>
+                    </div>
+
+                    <div class="form-actions">
+                        <label class="remember-me">
+                            <input type="checkbox" id="remember"> Remember me
+                        </label>
+                        <a href="#" class="forgot-password" data-soon="Password reset">Forgot password?</a>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Log In</button>
+                </form>
+
+                <div class="auth-footer">
+                    <p>Don't have an account? <a href="#/signup">Sign Up</a></p>
+                    <p>Protected by secure encryption. Need help? <a href="#" data-soon="Support">Contact Support</a></p>
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <!-- ================= SIGN UP ================= -->
+        <div class="view view-auth" id="view-signup" data-view="signup" hidden>
+            <div class="auth-shell">
+            <aside class="auth-aside">
+                <div class="aside-brand"><div class="logo-badge">Q</div>QuizCraft</div>
+                <div>
+                    <h2 class="aside-title">Turn every lesson into a quiz in seconds.</h2>
+                    <p class="aside-text">Create your free account and start with the material you already have.</p>
+                    <ul class="aside-points">
+                        <li><span class="dot" aria-hidden="true">✓</span>Build quizzes with your own questions</li>
+                        <li><span class="dot" aria-hidden="true">✓</span>Publish them for your students</li>
+                        <li><span class="dot" aria-hidden="true">✓</span>Students answer online and see scores instantly</li>
+                    </ul>
+                </div>
+                <div class="aside-quote">
+                    "QuizCraft cuts my test creation time down from hours to minutes."
+                    <strong>— Sarah T., High School Educator &amp; Mentor</strong>
+                </div>
+            </aside>
+
+            <div class="auth-card">
+                <div class="auth-brand"><div class="logo-badge">Q</div>QuizCraft</div>
+                <div class="auth-header">
+                    <h1 tabindex="-1" data-focus>Create Your Account</h1>
+                    <p class="role-note"></p>
+                    <p>Start turning lessons into quizzes in seconds</p>
+                </div>
+
+                <div class="social-auth">
+                    <button type="button" class="btn-social" data-provider="google" aria-label="Sign up with Google">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.46a5.52 5.52 0 0 1-2.4 3.62v3h3.88c2.27-2.09 3.58-5.17 3.58-8.81z"/>
+                            <path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.94-2.91l-3.88-3a7.2 7.2 0 0 1-10.7-3.78H1.36v3.1A12 12 0 0 0 12 24z"/>
+                            <path fill="#FBBC05" d="M5.36 14.31a7.2 7.2 0 0 1 0-4.62v-3.1H1.36a12 12 0 0 0 0 10.82l4-3.1z"/>
+                            <path fill="#EA4335" d="M12 4.77c1.76 0 3.34.61 4.59 1.8l3.44-3.44A11.5 11.5 0 0 0 12 0 12 12 0 0 0 1.36 6.59l4 3.1A7.2 7.2 0 0 1 12 4.77z"/>
+                        </svg>
+                        <span>Google</span>
+                    </button>
+                    <button type="button" class="btn-social" data-provider="facebook" aria-label="Sign up with Facebook">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill="#1877F2" d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07c0 6.03 4.39 11.03 10.13 11.93v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.69.24 2.69.24v2.97h-1.52c-1.49 0-1.96.93-1.96 1.88v2.26h3.33l-.53 3.49h-2.8V24C19.61 23.1 24 18.1 24 12.07z"/>
+                        </svg>
+                        <span>Facebook</span>
+                    </button>
+                </div>
+
+                <div class="auth-divider">or sign up with email</div>
+
+                <form id="signupForm" novalidate>
+                    <div class="form-group">
+                        <label for="signupName">Full Name</label>
+                        <input type="text" id="signupName" class="form-control" placeholder="Your name" autocomplete="name" aria-describedby="signupNameError">
+                        <p class="field-error" id="signupNameError" role="alert"></p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="signupEmail">Email Address</label>
+                        <input type="email" id="signupEmail" class="form-control" placeholder="name@example.com" autocomplete="email" aria-describedby="signupEmailError">
+                        <p class="field-error" id="signupEmailError" role="alert"></p>
+                    </div>
+
+                    <fieldset class="form-group">
+                        <legend>I am a</legend>
+                        <div class="role-options">
+                            <label class="role-option teacher">
+                                <input type="radio" name="role" value="teacher">
+                                <span>🍎 Teacher</span>
+                            </label>
+                            <label class="role-option student">
+                                <input type="radio" name="role" value="student">
+                                <span>🎓 Student</span>
+                            </label>
+                        </div>
+                        <p class="field-error" id="signupRoleError" role="alert"></p>
+                    </fieldset>
+
+                    <div class="form-group">
+                        <label for="signupPassword">Password</label>
+                        <div class="password-wrap">
+                            <input type="password" id="signupPassword" class="form-control" placeholder="At least 8 characters" autocomplete="new-password" aria-describedby="signupPasswordError">
+                            <button type="button" class="toggle-pw" data-target="signupPassword" aria-label="Show password">Show</button>
+                        </div>
+                        <p class="field-error" id="signupPasswordError" role="alert"></p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="signupConfirm">Confirm Password</label>
+                        <div class="password-wrap">
+                            <input type="password" id="signupConfirm" class="form-control" placeholder="Re-enter your password" autocomplete="new-password" aria-describedby="signupConfirmError">
+                            <button type="button" class="toggle-pw" data-target="signupConfirm" aria-label="Show password">Show</button>
+                        </div>
+                        <p class="field-error" id="signupConfirmError" role="alert"></p>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Create Account</button>
+                </form>
+
+                <div class="auth-footer">
+                    <p>Already have an account? <a href="#/login">Log In</a></p>
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <div class="view" id="view-dash" data-view="dashboard" hidden></div>
+
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-brand">
+                <h3>QuizCraft</h3>
+                <p>Empowering educators and inspiring learners worldwide.</p>
+            </div>
+            <div class="footer-group">
+                <div class="footer-links">
+                    <h4>Product</h4>
+                    <a href="#" data-soon="Quizzes">Quizzes</a>
+                    <a href="#" data-soon="Flashcard Creator">Flashcard Creator</a>
+                    <a href="#" data-soon="Integrations">Integrations</a>
+                    <a href="#" data-soon="Pricing">Pricing</a>
+                </div>
+                <div class="footer-links">
+                    <h4>Resources</h4>
+                    <a href="#" data-soon="Help Center">Help Center</a>
+                    <a href="#" data-soon="Teacher Network">Teacher Network</a>
+                    <a href="#" data-soon="Student Hub">Student Hub</a>
+                    <a href="#" data-soon="Privacy Policy">Privacy Policy</a>
+                </div>
+            </div>
+        </div>
+        <div class="copyright">
+            &copy; 2026 QuizCraft Inc. All rights reserved.
+        </div>
+    </footer>
+
+    <div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="false"></div>
+
+    <noscript>
+        <p style="position:fixed;bottom:0;left:0;right:0;background:#0F172A;color:#fff;padding:0.75rem 1rem;text-align:center;font-size:0.875rem;">
+            QuizCraft needs JavaScript turned on to work.
+        </p>
+    </noscript>
+
+    <script>
+    (function () {
+        'use strict';
+
+        const AUTH_CONFIG = {
+            googleClientId: '',
+            facebookAppId: '',
+            facebookVersion: 'v26.0'
+        };
+
+        
+        const $ = (sel, root = document) => root.querySelector(sel);
+        const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+        const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const smoothBehavior = () => (prefersReducedMotion() ? 'auto' : 'smooth');
+
+
+        const USER_KEY = 'quizcraft_user';
+        const REMEMBER_KEY = 'quizcraft_remember_email';
+        const memoryStore = {};
+
+        function getStorage(kind) {
+            try {
+                const s = window[kind];
+                const probe = '__quizcraft_probe__';
+                s.setItem(probe, probe);
+                s.removeItem(probe);
+                return s;
+            } catch (e) {
+                return null;
+            }
+        }
+    
+        const local = getStorage('localStorage');
+        const session = getStorage('sessionStorage');
+
+        function readUser() {
+            try {
+                const raw = (session && session.getItem(USER_KEY)) ||
+                            (local && local.getItem(USER_KEY)) ||
+                            memoryStore[USER_KEY];
+                return raw ? JSON.parse(raw) : null;
+            } catch (e) {
+                return null;
+            }
+        }
+    
+        function clearUser() {
+            try { if (session) session.removeItem(USER_KEY); } catch (e) {}
+            try { if (local) local.removeItem(USER_KEY); } catch (e) {}
+            delete memoryStore[USER_KEY];
+        }
+    
+        function saveUser(user, persist) {
+            clearUser();
+            const raw = JSON.stringify(user);
+            const target = persist ? local : session;
+            if (target) {
+                try { target.setItem(USER_KEY, raw); return; } catch (e) {}
+            }
+            memoryStore[USER_KEY] = raw;
+        }
+    
+        function readRememberedEmail() {
+            try { return (local && local.getItem(REMEMBER_KEY)) || ''; } catch (e) { return ''; }
+        }
+
+        function writeRememberedEmail(email) {
+            try {
+                if (!local) return;
+                if (email) local.setItem(REMEMBER_KEY, email);
+                else local.removeItem(REMEMBER_KEY);
+            } catch (e) {}
+        }
+    
+        /* ============================================================
+           Theme (light / dark)
+           ============================================================ */
+        const THEME_KEY = 'quizcraft_theme';
+        const THEME_COLORS = { light: '#F8FAFC', dark: '#0B1120' };
+        const themeToggle = $('#themeToggle');
+        const themeMeta = document.querySelector('meta[name="theme-color"]');
+
+        function storedTheme() {
+            try {
+                const t = local && local.getItem(THEME_KEY);
+                return t === 'light' || t === 'dark' ? t : null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function applyTheme(theme, persist, animate) {
+            const root = document.documentElement;
+
+            if (animate) {
+                root.classList.add('theme-anim');
+                setTimeout(() => root.classList.remove('theme-anim'), 350);
+            }
+
+            root.setAttribute('data-theme', theme);
+            if (themeMeta) themeMeta.setAttribute('content', THEME_COLORS[theme]);
+
+            const next = theme === 'dark' ? 'light' : 'dark';
+            themeToggle.setAttribute('aria-label', 'Switch to ' + next + ' mode');
+            themeToggle.title = 'Switch to ' + next + ' mode';
+
+            if (persist) {
+                try { if (local) local.setItem(THEME_KEY, theme); } catch (e) {}
+            }
+        }
+
+        themeToggle.addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+            applyTheme(current === 'dark' ? 'light' : 'dark', true, true);
+        });
+
+        // Follow the device setting until the visitor picks a theme themselves.
+        const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
+        const onSystemChange = (e) => {
+            if (!storedTheme()) applyTheme(e.matches ? 'dark' : 'light', false, true);
+        };
+        if (systemDark.addEventListener) systemDark.addEventListener('change', onSystemChange);
+        else if (systemDark.addListener) systemDark.addListener(onSystemChange);
+
+        applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light', false, false);
+
+        /* ============================================================
+           Toasts
+           ============================================================ */
+        const toastStack = $('#toastStack');
+
+        function toast(message, type) {
+            const el = document.createElement('div');
+            el.className = 'toast' + (type ? ' ' + type : '');
+            el.textContent = message;
+            toastStack.appendChild(el);
+
+            while (toastStack.children.length > 3) {
+                toastStack.removeChild(toastStack.firstChild);
+            }
+
+            setTimeout(() => {
+                el.classList.add('leaving');
+                setTimeout(() => el.remove(), 300);
+            }, 3800);
+        }
+
+        /* ============================================================
+           Navigation + mobile menu
+           ============================================================ */
+        const navLinks = $('#navLinks');
+        const menuToggle = $('#menuToggle');
+        const navLogin = $('#navLogin');
+        const navLogout = $('#navLogout');
+        const navCta = $('#navCta');
+
+        function setMenu(open) {
+            navLinks.classList.toggle('open', open);
+            menuToggle.setAttribute('aria-expanded', String(open));
+            menuToggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+        }
+
+        menuToggle.addEventListener('click', () => {
+            setMenu(!navLinks.classList.contains('open'));
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && navLinks.classList.contains('open')) {
+                setMenu(false);
+                menuToggle.focus();
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) setMenu(false);
+        });
+
+        function renderNavUser(user) {
+            const el = $('#navUser');
+            el.textContent = '';
+
+            if (!user) {
+                el.hidden = true;
+                return;
+            }
+
+            if (user.picture && /^https:\/\//.test(user.picture)) {
+                const img = document.createElement('img');
+                img.src = user.picture;
+                img.alt = '';
+                img.referrerPolicy = 'no-referrer';
+                img.addEventListener('error', () => img.remove());
+                el.appendChild(img);
+            }
+
+            const text = document.createElement('span');
+            text.textContent = 'Hi, ' + String(user.name || user.email || 'there').split(/[\s@]/)[0];
+            el.appendChild(text);
+            el.hidden = false;
+        }
+
+        function updateAuthUI() {
+            const user = readUser();
+            navLogin.hidden = !!user;
+            navLogout.hidden = !user;
+            renderNavUser(user);
+
+            if (user) {
+                navCta.textContent = 'Dashboard';
+                navCta.setAttribute('href', '#/dashboard');
+                navCta.removeAttribute('data-scroll');
+            } else {
+                navCta.textContent = 'Create Account';
+                navCta.setAttribute('href', '#/signup');
+                navCta.removeAttribute('data-scroll');
+            }
+        }
+
+        navLogout.addEventListener('click', () => {
+            clearUser();
+            updateAuthUI();
+            setMenu(false);
+            toast('You have been logged out.', 'success');
+            if (currentView !== 'home') location.hash = '#/';
+        });
+
+        /* ============================================================
+           Router (hash based: #/ , #/login , #/signup)
+           ============================================================ */
+        const TITLES = {
+            home: 'QuizCraft - Turn Any Lesson Into an Instant Quiz',
+            login: 'Log In - QuizCraft',
+            signup: 'Sign Up - QuizCraft',
+            dashboard: 'Dashboard - QuizCraft'
+        };
+
+        let currentView = 'home';
+        let pendingScroll = null;
+        let firstRender = true;
+
+        let activeRole = null, tab = 'dash', q = '', taking = null, qid = 0;
+
+        function parseHash() {
+            const p = location.hash.replace(/^#\/?/, '').toLowerCase().split('/');
+            const role = (p[1] === 'teacher' || p[1] === 'student') ? p[1] : null;
+            if (p[0] === 'login' || p[0] === 'signup') return { view: p[0], role: role };
+            if (p[0] === 'dashboard') return { view: 'dashboard' };
+            return { view: 'home' };
+        }
+
+                function scrollToId(id) {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: smoothBehavior(), block: 'start' });
+        }
+
+        function goToSection(id) {
+            if (currentView !== 'home') {
+                pendingScroll = id;
+                location.hash = '#/';
+            } else {
+                scrollToId(id);
+            }
+        }
+
+        function render() {
+            const route = parseHash(), user = readUser();
+            let target = route.view, note = null;
+            if (route.role) {
+                activeRole = route.role;
+                try { if (session) session.setItem('quizcraft_role', route.role); } catch (e) {}
+            } else if (!activeRole) {
+                try { activeRole = (session && session.getItem('quizcraft_role')) || null; } catch (e) {}
+            }
+            if (user && (target === 'login' || target === 'signup')) target = 'dashboard';
+            else if (target === 'dashboard' && !user) { target = 'home'; note = 'Please log in to open your dashboard.'; }
+            else if ((target === 'login' || target === 'signup') && !activeRole) { target = 'home'; note = 'Choose Teacher or Student first.'; }
+            if (target !== route.view) {
+                try { history.replaceState(null, '', location.pathname + location.search + (target === 'home' ? '#/' : '#/' + target)); } catch (e) {}
+            }
+            currentView = target;
+            $$('.view').forEach((v) => {
+                const on = v.dataset.view === target;
+                v.hidden = !on;
+                v.classList.toggle('active', on);
+            });
+            document.body.classList.toggle('in-dash', target === 'dashboard');
+            document.title = TITLES[target];
+            const pn = $('#pageName');
+            const lbl = activeRole ? ({ login: cap(activeRole) + ' Log In', signup: 'Create ' + cap(activeRole) + ' Account' }[target] || '') : '';
+            pn.textContent = lbl;
+            pn.hidden = !lbl;
+            setMenu(false);
+            updateAuthUI();
+            $$('.role-note').forEach((el) => {
+                el.textContent = '';
+                if (!activeRole) return;
+                const other = activeRole === 'teacher' ? 'student' : 'teacher';
+                const s = document.createElement('strong');
+                const a = document.createElement('a');
+                s.textContent = cap(activeRole) + ' account';
+                a.href = '#/' + (target === 'signup' ? 'signup' : 'login') + '/' + other;
+                a.textContent = 'Switch to ' + cap(other);
+                el.append(s, ' · ', a);
+            });
+            if (target === 'login') prepareLogin();
+            if (target === 'signup') {
+                resetForm($('#signupForm'));
+                const r = $('input[name="role"][value="' + activeRole + '"]');
+                if (r) r.checked = true;
+            }
+            if (target === 'login' || target === 'signup') preloadSocial();
+            if (target === 'dashboard') { tab = 'dash'; taking = null; q = ''; renderDash(); }
+            window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+            if (!firstRender) {
+                const hd = $('[data-focus]', $('#view-' + (target === 'dashboard' ? 'dash' : target)));
+                if (hd) hd.focus({ preventScroll: true });
+            }
+            firstRender = false;
+            if (note) toast(note);
+        }
+
+                window.addEventListener('hashchange', render);
+
+        /* One delegated click handler for all the small link behaviours */
+        document.addEventListener('click', (e) => {
+            const soon = e.target.closest('[data-soon]');
+            if (soon) {
+                e.preventDefault();
+                toast(soon.dataset.soon + ' is coming soon.');
+                return;
+            }
+
+            const scroller = e.target.closest('[data-scroll]');
+            if (scroller) {
+                e.preventDefault();
+                setMenu(false);
+                goToSection(scroller.dataset.scroll);
+                return;
+            }
+
+            const homeLink = e.target.closest('a[href="#/"]');
+            if (homeLink && currentView === 'home') {
+                e.preventDefault();
+                setMenu(false);
+                window.scrollTo({ top: 0, left: 0, behavior: smoothBehavior() });
+                return;
+            }
+
+            if (e.target.closest('.nav-links a')) setMenu(false);
+        });
+
+        /* ============================================================
+           Forms: validation helpers
+           ============================================================ */
+        const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+        function setError(input, message) {
+            const group = input.closest('.form-group');
+            const err = group.querySelector('.field-error');
+            err.textContent = message || '';
+            input.classList.toggle('invalid', !!message);
+            input.setAttribute('aria-invalid', message ? 'true' : 'false');
+        }
+
+        function clearErrorOnInput(form) {
+            $$('.form-control', form).forEach((input) => {
+                input.addEventListener('input', () => setError(input, ''));
+            });
+        }
+
+        function resetForm(form) {
+            form.reset();
+            $$('.form-control', form).forEach((input) => setError(input, ''));
+            const roleErr = $('#signupRoleError');
+            if (roleErr && form.id === 'signupForm') roleErr.textContent = '';
+            $$('.password-wrap', form).forEach((wrap) => {
+                const input = $('.form-control', wrap);
+                const btn = $('.toggle-pw', wrap);
+                input.type = 'password';
+                btn.textContent = 'Show';
+                btn.setAttribute('aria-label', 'Show password');
+            });
+        }
+
+        function focusFirstInvalid(form) {
+            const bad = $('.form-control.invalid', form);
+            if (bad) bad.focus();
+        }
+
+        // Stand-in for a real server request. Replace the body of this
+        // function with your backend call (fetch to your API) when ready.
+        function fakeRequest(ms) {
+            return new Promise((resolve) => setTimeout(resolve, ms || 700));
+        }
+
+        async function withLoading(button, loadingText, work) {
+            const original = button.textContent;
+            button.disabled = true;
+            button.textContent = loadingText;
+            try {
+                await work();
+            } finally {
+                button.disabled = false;
+                button.textContent = original;
+            }
+        }
+
+        /* Show / hide password buttons */
+        $$('.toggle-pw').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const input = document.getElementById(btn.dataset.target);
+                const show = input.type === 'password';
+                input.type = show ? 'text' : 'password';
+                btn.textContent = show ? 'Hide' : 'Show';
+                btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+            });
+        });
+
+        /* ============================================================
+           Login
+           ============================================================ */
+        const loginForm = $('#loginForm');
+        const loginEmail = $('#loginEmail');
+        const loginPassword = $('#loginPassword');
+        const rememberBox = $('#remember');
+        clearErrorOnInput(loginForm);
+
+        function prepareLogin() {
+            resetForm(loginForm);
+            const saved = readRememberedEmail();
+            if (saved) {
+                loginEmail.value = saved;
+                rememberBox.checked = true;
+            }
+        }
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = loginEmail.value.trim();
+            const password = loginPassword.value;
+            let valid = true;
+
+            if (!email) {
+                setError(loginEmail, 'Enter your email address.');
+                valid = false;
+            } else if (!EMAIL_RE.test(email)) {
+                setError(loginEmail, 'Enter a valid email, like name@example.com.');
+                valid = false;
+            }
+
+            if (!password) {
+                setError(loginPassword, 'Enter your password.');
+                valid = false;
+            }
+
+            if (!valid) {
+                focusFirstInvalid(loginForm);
+                return;
+            }
+
+          const button = $('.btn-submit', loginForm);
+            try {
+                await withLoading(button, 'Signing in…', async () => {
+                    const res = await fetch('api/login.php', {
+
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    });
+
+                    const data = await res.json();
+                       if (!res.ok) throw new Error(data.error || 'Failed to log in');
+        saveUser({ email: data.email, name: data.name, role: data.role }, rememberBox.checked);
+        writeRememberedEmail(rememberBox.checked ? data.email : '');
+    });
+    toast('Welcome back, ' + firstName() + '!', 'success');
+    toast('Welcome back, ' + firstName(readUser()) + '!', 'success');
+    updateAuthUI();
+    location.hash = '#/dashboard';
+} catch (err) {
+    toast(err.message || 'Could not sign in.', 'error');
+            }
+        });
+
+        /* ============================================================
+           Sign up
+           ============================================================ */
+        const signupForm = $('#signupForm');
+        const signupName = $('#signupName');
+        const signupEmail = $('#signupEmail');
+        const signupPassword = $('#signupPassword');
+        const signupConfirm = $('#signupConfirm');
+        const signupRoleError = $('#signupRoleError');
+        clearErrorOnInput(signupForm);
+
+        $$('input[name="role"]', signupForm).forEach((radio) => {
+            radio.addEventListener('change', () => { signupRoleError.textContent = ''; });
+        });
+
+        signupForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+
+            const name = signupName.value.trim();
+            const email = signupEmail.value.trim();
+            const password = signupPassword.value;
+            const confirm = signupConfirm.value;
+            const roleInput = $('input[name="role"]:checked', signupForm);
+            let valid = true;
+
+            if (!name) {
+                setError(signupName, 'Enter your name.');
+                valid = false;
+            }
+
+            if (!email) {
+                setError(signupEmail, 'Enter your email address.');
+                valid = false;
+            } else if (!EMAIL_RE.test(email)) {
+                setError(signupEmail, 'Enter a valid email, like name@example.com.');
+                valid = false;
+            }
+
+            if (!roleInput) {
+                signupRoleError.textContent = 'Choose Teacher or Student.';
+                valid = false;
+            }
+
+            if (password.length < 8) {
+                setError(signupPassword, 'Use at least 8 characters.');
+                valid = false;
+            }
+
+            if (!confirm) {
+                setError(signupConfirm, 'Re-enter your password.');
+                valid = false;
+            } else if (password !== confirm) {
+                setError(signupConfirm, 'Passwords do not match.');
+                valid = false;
+            }
+
+            if (!valid) {
+                focusFirstInvalid(signupForm);
+                return;
+            }
+
+            const button = $('.btn-submit', signupForm);
+    try {
+        await withLoading(button, 'Creating account…', async () => {
+            const res = await fetch('api/signup.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: signupName.value.trim(),
+                    email: signupEmail.value.trim(),
+                    password: signupPassword.value,
+                    role: roleInput.value
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to sign up');
+            saveUser({ email: data.email, name: data.name, role: data.role }, true);
+        });
+        toast('Welcome to QuizCraft!', 'success');
+        updateAuthUI();
+        location.hash = '#/dashboard';
+    } catch (err) {
+        toast(err.message, 'error');
+    }
+});
+
+        /* ============================================================
+           Google / Facebook sign-in (real provider flows)
+           ============================================================ */
+        const socialButtons = $$('.btn-social');
+        const scriptPromises = {};
+        const POPUP_CANCEL_CODES = ['popup_closed', 'access_denied', 'cancelled'];
+
+        function loadScript(src) {
+            if (scriptPromises[src]) return scriptPromises[src];
+            scriptPromises[src] = new Promise((resolve, reject) => {
+                const el = document.createElement('script');
+                el.src = src;
+                el.async = true;
+                el.onload = resolve;
+                el.onerror = () => {
+                    delete scriptPromises[src];
+                    el.remove();
+                    reject(new Error('script-load-failed'));
+                };
+                document.head.appendChild(el);
+            });
+            return scriptPromises[src];
+        }
+
+        function firstName(user) {
+            return String((user && (user.name || user.email)) || 'there').split(/[\s@]/)[0];
+        }
+
+        /* ---------- Google (Google Identity Services, popup + access token) ---------- */
+        let googleTokenClient = null;
+        let googleReady = null;
+        let googleWaiter = null;
+
+        function prepareGoogle() {
+            if (googleReady) return googleReady;
+            googleReady = loadScript('https://accounts.google.com/gsi/client').then(() => {
+                googleTokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: AUTH_CONFIG.googleClientId,
+                    scope: 'openid email profile',
+                    callback: (resp) => {
+                        const waiter = googleWaiter;
+                        googleWaiter = null;
+                        if (!waiter) return;
+                        if (resp && resp.access_token) waiter.resolve(resp);
+                        else waiter.reject(Object.assign(new Error('google-error'), { code: resp && resp.error }));
+                    },
+                    error_callback: (err) => {
+                        const waiter = googleWaiter;
+                        googleWaiter = null;
+                        if (waiter) waiter.reject(Object.assign(new Error('google-popup'), { code: err && err.type }));
+                    }
+                });
+            }).catch((err) => {
+                googleReady = null;
+                throw err;
+            });
+            return googleReady;
+        }
+
+        // Must run straight from the click so the browser allows the popup.
+        function signInWithGoogle() {
+            return new Promise((resolve, reject) => {
+                googleWaiter = { resolve, reject };
+                googleTokenClient.requestAccessToken({ prompt: 'select_account' });
+            }).then(async (resp) => {
+                const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                    headers: { Authorization: 'Bearer ' + resp.access_token }
+                });
+                if (!res.ok) throw new Error('profile-failed');
+                const p = await res.json();
+                return {
+                    name: p.name || p.email || 'Google user',
+                    email: p.email || '',
+                    picture: p.picture || '',
+                    provider: 'google'
+                };
+            });
+        }
+
+        /* ---------- Facebook (Facebook JavaScript SDK) ---------- */
+        let facebookReady = null;
+        let facebookInitialized = false;
+
+        function prepareFacebook() {
+            if (facebookReady) return facebookReady;
+            facebookReady = new Promise((resolve, reject) => {
+                window.fbAsyncInit = function () {
+                    FB.init({
+                        appId: AUTH_CONFIG.facebookAppId,
+                        cookie: true,
+                        xfbml: false,
+                        version: AUTH_CONFIG.facebookVersion
+                    });
+                    facebookInitialized = true;
+                    resolve();
+                };
+                loadScript('https://connect.facebook.net/en_US/sdk.js').catch((err) => {
+                    facebookReady = null;
+                    reject(err);
+                });
+            });
+            return facebookReady;
+        }
+
+        // Must run straight from the click so the browser allows the popup.
+        function signInWithFacebook() {
+            return new Promise((resolve, reject) => {
+                FB.login(function (response) {
+                    if (response && response.authResponse) resolve(response.authResponse);
+                    else reject(Object.assign(new Error('facebook-cancelled'), { code: 'cancelled' }));
+                }, { scope: 'public_profile,email' });
+            }).then(() => new Promise((resolve, reject) => {
+                FB.api('/me', { fields: 'name,email,picture.width(96).height(96)' }, function (p) {
+                    if (!p || p.error) {
+                        reject(new Error('profile-failed'));
+                        return;
+                    }
+                    resolve({
+                        name: p.name || 'Facebook user',
+                        email: p.email || '',
+                        picture: (p.picture && p.picture.data && p.picture.data.url) || '',
+                        provider: 'facebook'
+                    });
+                });
+            }));
+        }
+
+        /* ---------- Shared button behaviour ---------- */
+        function preloadSocial() {
+            if (location.protocol === 'file:') return;
+            if (AUTH_CONFIG.googleClientId) prepareGoogle().catch(() => {});
+            if (AUTH_CONFIG.facebookAppId) prepareFacebook().catch(() => {});
+        }
+
+        function setSocialBusy(activeBtn, busy) {
+            socialButtons.forEach((b) => {
+                b.disabled = busy;
+                if (b === activeBtn) {
+                    const span = $('span', b);
+                    if (busy) {
+                        b.dataset.label = span.textContent;
+                        span.textContent = 'Connecting…';
+                    } else if (b.dataset.label) {
+                        span.textContent = b.dataset.label;
+                    }
+                }
+            });
+        }
+
+        function handleSocial(btn) {
+            const provider = btn.dataset.provider;
+            const isGoogle = provider === 'google';
+            const label = isGoogle ? 'Google' : 'Facebook';
+
+            if (!(isGoogle ? AUTH_CONFIG.googleClientId : AUTH_CONFIG.facebookAppId)) {
+                toast(label + ' sign-in is not set up yet. Add your ' +
+                    (isGoogle ? 'Google Client ID' : 'Facebook App ID') + ' to AUTH_CONFIG in the code.', 'error');
+                return;
+            }
+
+            if (location.protocol === 'file:') {
+                toast(label + ' sign-in needs the site opened from a web address (https, or http://localhost), not a local file.', 'error');
+                return;
+            }
+
+            const ready = isGoogle ? !!googleTokenClient : facebookInitialized;
+            if (!ready) {
+                toast(label + ' sign-in is still loading. Try again in a moment.');
+                (isGoogle ? prepareGoogle() : prepareFacebook()).catch(() => {
+                    toast('Could not load ' + label + ' sign-in. Check your connection or ad blocker.', 'error');
+                });
+                return;
+            }
+
+            setSocialBusy(btn, true);
+
+            (isGoogle ? signInWithGoogle() : signInWithFacebook())
+                .then((profile) => {
+                    const sk = (profile.email || provider + ':' + profile.name).toLowerCase(), sall = accts(), sex = sall[sk], srole = activeRole || 'student';
+                    if (sex && sex.role !== srole) { toast('This account is registered as a ' + cap(sex.role) + '. Use the ' + cap(sex.role) + ' login.', 'error'); return; }
+                    if (!sex) { sall[sk] = { email: sk, name: profile.name, role: srole }; DB.set('accounts', sall); }
+                    profile.role = sex ? sex.role : srole;
+                    saveUser(profile, true);
+                    toast('Welcome, ' + firstName(profile) + '!', 'success');
+                    updateAuthUI();
+                    location.hash = '#/dashboard';
+                })
+                .catch((err) => {
+                    const code = (err && (err.code || err.message)) || '';
+                    if (code === 'popup_failed_to_open') {
+                        toast('Your browser blocked the ' + label + ' popup. Allow popups for this site and try again.', 'error');
+                    } else if (POPUP_CANCEL_CODES.includes(code)) {
+                        toast(label + ' sign-in was cancelled.');
+                    } else {
+                        toast('Could not sign in with ' + label + '. Please try again.', 'error');
+                    }
+                })
+                .finally(() => setSocialBusy(btn, false));
+        }
+
+        socialButtons.forEach((btn) => {
+            btn.addEventListener('click', () => handleSocial(btn));
+        });
+
+        /* ============================================================
+           Dashboards (Teacher / Student)
+           ============================================================ */
+        const DB = {
+            get(k, d) { try { const r = (local && local.getItem('quizcraft_' + k)) || memoryStore['db_' + k]; return r ? JSON.parse(r) : d; } catch (e) { return d; } },
+            set(k, v) { const r = JSON.stringify(v); try { if (local) { local.setItem('quizcraft_' + k, r); return; } } catch (e) { toast('Browser storage is full or blocked, so this change may not be saved.', 'error'); } memoryStore['db_' + k] = r; }
+        };
+        const cap = (s) => s ? s[0].toUpperCase() + s.slice(1) : '';
+        const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const accts = () => DB.get('accounts', {}), quizzes = () => DB.get('quizzes', []), results = () => DB.get('results', []);
+        async function hashPw(e, p) {
+            const s = e + ':' + p;
+            if (window.crypto && crypto.subtle) {
+                const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+                return Array.from(new Uint8Array(b), (x) => x.toString(16).padStart(2, '0')).join('');
+            }
+            return btoa(unescape(encodeURIComponent(s)));
+        }
+        function seed() {
+            if (DB.get('quizzes', null)) return;
+            const mk = (id, title, subject, qs) => ({ id, title, subject, owner: 'demo', ownerName: 'QuizCraft Demo', published: true, created: Date.now(), questions: qs.map((x) => ({ q: x[0], o: x.slice(1, 5), a: x[5] })) });
+            DB.set('quizzes', [
+                mk('s1', 'Web Basics', 'Computer Science', [['What does HTML stand for?', 'HyperText Markup Language', 'High Text Machine Language', 'Hyperlinks and Text Markup', 'Home Tool Markup Language', 0], ['Which tag creates a link?', '<link>', '<a>', '<href>', '<url>', 1]]),
+                mk('s2', 'Basic Math', 'Mathematics', [['12 × 8 = ?', '96', '86', '108', '88', 0], ['Square root of 81?', '7', '8', '9', '10', 2]])
+            ]);
+        }
+        const pct = (r) => r.total ? Math.round(sc(r) / r.total * 100) : 0, when = (t) => new Date(t).toLocaleDateString();
+        const ok = (s) => !q || s.toLowerCase().includes(q.toLowerCase());
+        const stat = (i, bg, n, l) => '<div class="stat"><div class="si" style="background:' + bg + '">' + i + '</div><div><b>' + n + '</b><span>' + l + '</span></div></div>';
+        const head = (t, s, tiles) => '<div class="dhead"><div><h1>' + esc(t) + '</h1><p>' + s + '</p></div><div class="tiles">' + tiles.map((x) => '<button class="tile" data-tab="' + x[0] + '"><span>' + x[2] + '</span>' + x[1] + '</button>').join('') + '</div></div>';
+        const emp = (m) => '<p class="empty">' + m + '</p>';
+        const panel = (t, l, b) => '<div class="panel"><h2>' + t + (l ? '<a data-tab="' + l[0] + '">' + l[1] + '</a>' : '') + '</h2>' + b + '</div>';
+        const rrow = (a, b, r) => '<div class="row"><div>' + a + '<small>' + b + '</small></div><div>' + r + '</div></div>';
+        const badge = (r) => '<span class="badge ' + (pend(r) ? 'warn' : pct(r) >= 60 ? 'ok' : 'warn') + '">' + f1(sc(r)) + '/' + r.total + (pend(r) ? ' · grading pending' : '') + '</span>';
+
+        /* ----- Shared logic ----- */
+        const TYPES = { mc: 'Multiple Choice', id: 'Identification', calc: 'Calculation', enum: 'Enumeration', essay: 'Essay' };
+        const classes = () => DB.get('classes', []), mats = () => DB.get('materials', []), pract = () => DB.get('practice', []), atts = () => DB.get('att', {});
+        const cname = (id) => (classes().find((c) => c.id === id) || {}).name || 'No class';
+        const fdt = (t) => t ? new Date(t).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+        const f1 = (n) => +Number(n).toFixed(1);
+        const sc = (r) => r.auto ? r.auto.reduce((s, p, i) => s + (r.man && r.man[i] != null ? r.man[i] : (p || 0)), 0) : r.score;
+        const pend = (r) => r.auto ? r.auto.filter((p, i) => p === null && !(r.man && r.man[i] != null)).length : 0;
+        const qp = (r, i) => r.man && r.man[i] != null ? r.man[i] : r.auto[i];
+        let timer = null, cls = null, review = null, reading = null;
+        const myC = (u) => classes().filter((c) => c.owner === u.email);
+        const myQ = (u) => quizzes().filter((z) => z.owner === u.email);
+        const myR = (u) => { const ids = myQ(u).map((z) => z.id); return results().filter((r) => ids.includes(r.quizId)).sort((a, b) => b.t - a.t); };
+        const sC = (u) => classes().filter((c) => c.members.some((m) => m.email === u.email));
+        const sQ = (u) => { const ids = sC(u).map((c) => c.id); return quizzes().filter((z) => z.published && ids.includes(z.classId)); };
+        const mkCode = () => { const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let c; do { c = Array.from({ length: 6 }, () => A[Math.floor(Math.random() * A.length)]).join(''); } while (classes().some((x) => x.code === c)); return c; };
+        const qMeta = (z) => esc(cname(z.classId)) + ' · ' + z.questions.length + ' questions · ' + (z.limit ? z.limit + ' min' : 'no time limit') + ' · ' + (z.start ? 'opens ' + fdt(z.start) : 'open now') + ' · ' + (z.deadline ? 'due ' + fdt(z.deadline) : 'no deadline');
+
+        /* grading */
+        const norm = (s) => String(s == null ? '' : s).toLowerCase().replace(/[^\p{L}\p{N}.\-\s]/gu, '').replace(/\s+/g, ' ').trim();
+        function pts(x, a) {
+            const t = x.type || 'mc';
+            if (t === 'mc') return a === x.a ? 1 : 0;
+            if (t === 'essay') return null;
+            if (t === 'enum') {
+                const k = [].concat(x.a).map(norm).filter(Boolean), g = new Set(String(a || '').split(/[\n,;]+/).map(norm).filter(Boolean));
+                return k.length ? k.filter((v) => g.has(v)).length / k.length : 0;
+            }
+            const g = norm(a);
+            return String(x.a).split('|').some((v) => { const p = norm(v), n1 = Number(p), n2 = Number(g); return p === g || (p !== '' && g !== '' && isFinite(n1) && isFinite(n2) && Math.abs(n1 - n2) < 1e-6); }) ? 1 : 0;
+        }
+        const subOf = (z, u) => results().find((r) => r.quizId === z.id && r.email === u.email);
+        function qSt(z, u) {
+            if (subOf(z, u)) return 'Submitted';
+            const n = Date.now();
+            if (atts()[u.email + '|' + z.id]) return 'In Progress';
+            if (z.deadline && n > z.deadline) return 'Closed';
+            if (z.start && n < z.start) return 'Upcoming';
+            return 'Available';
+        }
+        function doSubmit(z, u, ans) {
+            const ex = subOf(z, u);
+            if (ex) return ex;
+            const r = { id: 'r' + Date.now(), quizId: z.id, title: z.title, email: u.email, name: u.name, ans, auto: z.questions.map((x, i) => pts(x, ans[i])), man: {}, total: z.questions.length, t: Date.now() };
+            DB.set('results', [...results(), r]);
+            const a = atts(); delete a[u.email + '|' + z.id]; DB.set('att', a);
+            return r;
+        }
+        function settle(u) {
+            const n = Date.now(), a = atts();
+            sQ(u).forEach((z) => { const k = a[u.email + '|' + z.id]; if (k && k.end != null && n >= k.end) doSubmit(z, u, k.ans || []); });
+        }
+        function startQuiz(z, u) {
+            const st = qSt(z, u);
+            if (st !== 'Available' && st !== 'In Progress') { toast(st === 'Upcoming' ? 'This quiz opens ' + fdt(z.start) + '.' : st === 'Submitted' ? 'You already submitted this quiz.' : 'This quiz is closed.', 'error'); return; }
+            const a = atts(), k = u.email + '|' + z.id;
+            if (!a[k]) { const t0 = Date.now(), e = [z.limit ? t0 + z.limit * 60000 : null, z.deadline || null].filter(Boolean); a[k] = { t0, end: e.length ? Math.min(...e) : null, ans: [] }; DB.set('att', a); }
+            taking = { id: z.id }; body();
+        }
+        const collect = (z) => z.questions.map((x, i) => { if ((x.type || 'mc') === 'mc') { const c = $('input[name="a' + i + '"]:checked'); return c ? +c.value : -1; } const e = $('[data-i="' + i + '"]'); return e ? e.value : ''; });
+        function tick() {
+            const u = readUser(), el = $('#tm');
+            if (!taking || taking.res || !u || !el) { clearInterval(timer); return; }
+            const k = atts()[u.email + '|' + taking.id];
+            if (!k) { clearInterval(timer); return; }
+            if (k.end == null) { el.textContent = 'No time limit'; return; }
+            const s = Math.max(0, Math.round((k.end - Date.now()) / 1000));
+            el.textContent = '⏱ ' + Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+            if (s <= 0) { clearInterval(timer); toast('Time is up. Your answers were submitted.'); submitQuiz(u, true); }
+        }
+
+        /* rule-based draft generator (runs in the browser, not an AI service) */
+        function gen(text, types, n, diff) {
+            const S = (text.replace(/\s+/g, ' ').match(/[^.!?]+[.!?]?/g) || []).map((s) => s.trim()).filter((s) => s.split(' ').length >= 6);
+            S.sort((a, b) => diff === 'hard' ? b.length - a.length : diff === 'easy' ? a.length - b.length : 0);
+            const W = (s) => s.match(/[A-Za-z][A-Za-z'-]{4,}/g) || [], all = [...new Set(S.flatMap(W))];
+            const rnd = (k) => Math.floor(Math.random() * k), sh = (a) => a.sort(() => Math.random() - .5), R = { easy: [2, 9], medium: [6, 15], hard: [12, 99] }[diff] || [6, 15], out = [];
+            for (let i = 0; i < n; i++) {
+                const t = types[i % types.length];
+                if (t === 'calc') { const a = R[0] + rnd(R[1] - R[0] + 1), b = R[0] + rnd(R[1] - R[0] + 1); out.push({ type: 'calc', q: 'Compute: ' + a + ' × ' + b, a: String(a * b), e: a + ' × ' + b + ' = ' + a * b }); continue; }
+                if (!S.length) continue;
+                const s = S[i % S.length], w = W(s).sort((x, y) => y.length - x.length);
+                if (t === 'essay') { out.push({ type: 'essay', q: 'In your own words, explain: ' + s, a: s, e: 'Sample answer: ' + s }); continue; }
+                if (!w.length) continue;
+                if (t === 'enum' && w.length >= 3) { const k = w.slice(0, 3); out.push({ type: 'enum', q: 'List 3 key terms from this statement: "' + s + '"', a: k, e: 'Key terms: ' + k.join(', ') }); continue; }
+                const key = w[0], blank = s.replace(new RegExp('\\b' + key + '\\b'), '_____');
+                if (t === 'mc') { const d = sh(all.filter((x) => x.toLowerCase() !== key.toLowerCase())).slice(0, 3); if (d.length === 3) { const o = sh([key, ...d]); out.push({ type: 'mc', q: 'Fill in the blank: ' + blank, o, a: o.indexOf(key), e: s }); continue; } }
+                out.push({ type: 'id', q: 'Identify the missing word: ' + blank, a: key, e: s });
+            }
+            return out;
+        }
+        const genPanel = (srcs, stu) => '<div class="panel qb" style="margin-bottom:1rem"><h2>' + (stu ? 'Practice Quiz Generator' : 'Draft Questions from Notes') + '</h2><p class="empty" style="padding:0">Rule-based generator that runs in your browser on the text you give it. It is not an AI service, so check every question.</p>' + (stu ? '<input type="text" id="gtl" placeholder="Practice quiz title (optional)">' : '') +
+            '<div class="fg"><label>Lesson file (TXT)<select id="gs"><option value="">— none —</option>' + srcs.map((m) => '<option value="' + m.id + '">' + esc(m.title) + '</option>').join('') + '</select></label><label>Or upload a .txt file<input type="file" id="gf" accept=".txt"></label></div><textarea id="gt" rows="5" placeholder="Paste your notes or lesson text here (PDF, DOCX and PPTX text can be pasted)"></textarea><div class="fg">' +
+            Object.keys(TYPES).map((k) => '<label class="choice" style="margin:0"><input type="checkbox" class="gtyp" value="' + k + '"' + (k === 'mc' || k === 'id' ? ' checked' : '') + '>' + TYPES[k] + '</label>').join('') +
+            '</div><div class="fg"><label>Number of questions<input type="number" id="gn" min="1" max="30" value="5"></label><label>Difficulty<select id="gd"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option></select></label></div><div><button type="button" class="btn-s" data-act="gen">' + (stu ? 'Generate &amp; Start' : 'Generate Draft Questions') + '</button></div></div>';
+
+        /* question cards, inputs and review */
+        const qCard = (d) => {
+            d = d || { type: 'mc' };
+            const id = ++qid, t = d.type;
+            return '<div class="qcard" data-type="' + t + '"><div class="row" style="border:0;padding:0 0 .5rem"><b>Question</b><span><select class="qty">' + Object.keys(TYPES).map((k) => '<option value="' + k + '"' + (k === t ? ' selected' : '') + '>' + TYPES[k] + '</option>').join('') + '</select> <button type="button" class="btn-s red" data-act="rmq">Remove</button></span></div><input type="text" class="qt" placeholder="Type the question" value="' + esc(d.q || '') + '">' +
+                (t === 'mc' ? [0, 1, 2, 3].map((i) => '<div class="opt"><input type="radio" name="c' + id + '" value="' + i + '"' + ((d.a || 0) === i ? ' checked' : '') + '><input type="text" class="qo" placeholder="Option ' + 'ABCD'[i] + '" value="' + esc((d.o || [])[i] || '') + '"></div>').join('') :
+                    '<input type="text" class="qa" style="margin-top:.5rem" placeholder="' + (t === 'enum' ? 'Correct items, separated by commas' : t === 'essay' ? 'Sample answer or rubric (optional)' : 'Correct answer (use | for alternatives)') + '" value="' + esc(Array.isArray(d.a) ? d.a.join(', ') : (d.a || '')) + '">') + '</div>';
+        };
+        const num = () => $$('.qcard b').forEach((b, i) => { b.textContent = 'Question ' + (i + 1); });
+        const qIn = (x, i, v) => {
+            const t = x.type || 'mc';
+            if (t === 'mc') return x.o.map((o, j) => '<label class="choice"><input type="radio" name="a' + i + '" value="' + j + '"' + (v === j ? ' checked' : '') + '>' + esc(o) + '</label>').join('');
+            return t === 'essay' || t === 'enum' ? '<textarea class="qin" data-i="' + i + '" rows="' + (t === 'essay' ? 6 : 3) + '" placeholder="' + (t === 'enum' ? 'One answer per line, or separated by commas' : 'Write your answer') + '">' + esc(v || '') + '</textarea>' : '<input type="text" class="qin" data-i="' + i + '" placeholder="Your answer" value="' + esc(v || '') + '">';
+        };
+        const ansTxt = (x, v) => (x.type || 'mc') === 'mc' ? (v >= 0 && x.o[v] != null ? x.o[v] : '(no answer)') : (v == null || v === '' ? '(no answer)' : v);
+        const keyTxt = (x) => (x.type || 'mc') === 'mc' ? x.o[x.a] : Array.isArray(x.a) ? x.a.join(', ') : (x.a || '—');
+        function qReview(z, r, edit, prac) {
+            return z.questions.map((x, i) => {
+                const t = x.type || 'mc', p = qp(r, i), g = edit && t !== 'mc';
+                return '<div class="qcard"><b>' + (i + 1) + '. ' + esc(x.q) + '</b> <span class="badge">' + TYPES[t] + '</span><p style="margin-top:.5rem;font-size:.88rem"><b>Answer:</b> ' + esc(ansTxt(x, r.ans[i])) + '</p>' +
+                    (t === 'essay' && !edit && !prac ? '' : '<p style="font-size:.88rem"><b>' + (t === 'essay' ? 'Sample answer' : 'Correct') + ':</b> ' + esc(keyTxt(x)) + '</p>') + (prac && x.e ? '<p class="empty" style="padding:0">' + esc(x.e) + '</p>' : '') +
+                    (g ? '<label style="font-size:.8rem;font-weight:700">Points (0–1) <input type="number" data-g="' + i + '" min="0" max="1" step="0.25" value="' + (p == null ? '' : f1(p)) + '" style="width:110px"></label>' : prac && t === 'essay' ? '<span class="badge">Self-review with the sample answer</span>' : '<span class="badge ' + (p == null ? 'warn' : p >= 1 ? 'ok' : '') + '">' + (p == null ? 'Waiting for teacher to grade' : f1(p) + ' / 1') + '</span>') + '</div>';
+            }).join('');
+        }
+        const matList = (L, T, qz) => {
+            if (!L.length) return emp('No materials yet.');
+            const g = {};
+            L.forEach((m) => { (g[m.chapter || 'General'] = g[m.chapter || 'General'] || []).push(m); });
+            return Object.keys(g).map((ch) => '<h3 style="font-size:.9rem;margin:.6rem 0 0">' + esc(ch) + '</h3>' + g[ch].map((m) => rrow('<b>' + esc(m.title) + '</b>', m.ext.toUpperCase() + ' · ' + Math.max(1, Math.round(m.size / 1024)) + ' KB',
+                '<a class="btn-s ghost" style="text-decoration:none" download="' + esc(m.fname) + '" href="' + m.data + '">Download</a>' + (m.ext === 'pdf' ? ' <button class="btn-s ghost" data-act="open" data-id="' + m.id + '">Open</button>' : '') + (m.ext === 'txt' ? ' <button class="btn-s ghost" data-act="read" data-id="' + m.id + '">Read</button>' : '') + (T ? ' <button class="btn-s red" data-act="delmat" data-id="' + m.id + '">Delete</button>' : ''))).join('') + (qz ? qz(ch) : '')).join('');
+        };
+        const readPanel = (u) => {
+            const m = reading && mats().find((x) => x.id === reading);
+            if (!m || !(m.owner === u.email || sC(u).some((c) => c.id === m.classId))) return '';
+            return '<div class="panel" style="margin-bottom:1rem"><h2>' + esc(m.title) + '<a data-act="closeread">Close</a></h2><pre style="white-space:pre-wrap;font-size:.85rem;max-height:50vh;overflow:auto">' + esc(m.text || '') + '</pre></div>';
+        };
+
+        /* ----- Teacher ----- */
+        function tDash(u) {
+            const C = myC(u), Q = myQ(u), R = myR(u), st = new Set(C.flatMap((c) => c.members.map((m) => m.email))).size, avg = R.length ? Math.round(R.reduce((s, r) => s + pct(r), 0) / R.length) : 0;
+            return head('Welcome Back, ' + firstName(u), 'Here’s what’s happening in your classes today.', [['classes', 'Create Class', '🏫'], ['materials', 'Upload Material', '📄'], ['create', 'Create Quiz', '＋']]) +
+                '<div class="stats">' + stat('🏫', '#EEF2FF', C.length, 'Classes') + stat('🎓', '#E0F2FE', st, 'Students') + stat('📘', '#DCFCE7', Q.filter((z) => z.published).length + '/' + Q.length, 'Published Quizzes') + stat('📈', '#FEF3C7', avg + '%', 'Average Score') + '</div><div class="cols">' +
+                panel('Recent Submissions', ['students', 'View All'], R.slice(0, 4).map((r) => rrow('<b>' + esc(r.name) + '</b>', esc(r.title) + ' · ' + when(r.t), badge(r))).join('') || emp('No submissions yet.')) +
+                panel('My Classes', ['classes', 'Manage'], C.slice(0, 4).map((c) => rrow('<b>' + esc(c.name) + '</b>', c.members.length + ' students', '<span class="code">' + c.code + '</span>')).join('') || emp('Create your first class to get a class code.')) + '</div>';
+        }
+        function tClasses(u) {
+            const C = myC(u).filter((c) => ok(c.name));
+            return head('My Classes', 'Create a class, share its code, and see who has joined.', [['materials', 'Upload Material', '📄']]) +
+                '<div class="panel qb" style="margin-bottom:1rem"><h2>Create a Class</h2><input type="text" id="cn" placeholder="Class name"><input type="text" id="cdsc" placeholder="Description"><div><button class="btn-s" data-act="mkclass">Create Class</button></div></div>' +
+                panel('Your Classes (' + C.length + ')', null, C.map((c) => rrow('<b>' + esc(c.name) + '</b>', esc(c.desc || 'No description') + '<br>' + (c.members.length ? 'Students: ' + c.members.map((m) => esc(m.name)).join(', ') : 'No students have joined yet.'), '<span class="code">' + c.code + '</span> <button class="btn-s ghost" data-act="copy" data-id="' + c.code + '">Copy</button>')).join('') || emp('No classes yet.'));
+        }
+        function tMaterials(u) {
+            const C = myC(u), M = mats().filter((m) => m.owner === u.email && ok(m.title + m.chapter));
+            return head('Lessons & Files', 'Upload lessons by chapter. PDF, DOCX, PPTX or TXT, up to 1.5 MB each.', [['create', 'Create Quiz', '＋']]) + readPanel(u) +
+                (C.length ? '<div class="panel qb" style="margin-bottom:1rem"><h2>Upload a File</h2><div class="fg"><label>Class<select id="mc">' + C.map((c) => '<option value="' + c.id + '">' + esc(c.name) + '</option>').join('') + '</select></label><label>Chapter / lesson<input type="text" id="mch" placeholder="e.g. Chapter 1"></label><label>Title<input type="text" id="mti" placeholder="Optional"></label><label>File<input type="file" id="mf" accept=".pdf,.docx,.pptx,.txt"></label></div><div><button class="btn-s" data-act="upload">Upload</button></div></div>' : '<div class="panel" style="margin-bottom:1rem">' + emp('Create a class first, then upload lessons to it.') + '</div>') +
+                C.map((c) => panel(esc(c.name), null, matList(M.filter((m) => m.classId === c.id), true))).join('<div style="height:1rem"></div>');
+        }
+        function tCreate(u) {
+            return head('Create Quiz', 'Set it up, add or generate questions, review them, then save or publish.', [['quizzes', 'My Quizzes', '📘']]) + genPanel(mats().filter((m) => m.owner === u.email && m.ext === 'txt')) +
+                '<div class="panel qb"><h2>Quiz Settings</h2><div class="fg"><label>Title<input type="text" id="zt" placeholder="Quiz title"></label><label>Class<select id="zc"><option value="">— select a class —</option>' + myC(u).map((c) => '<option value="' + c.id + '">' + esc(c.name) + '</option>').join('') + '</select></label><label>Attach to lesson / chapter<input type="text" id="zl" placeholder="Same name as a chapter (optional)"></label><label>Time limit (minutes, 0 = none)<input type="number" id="zm" min="0" value="0"></label><label>Opens<input type="datetime-local" id="zst"></label><label>Deadline<input type="datetime-local" id="zdl"></label></div>' +
+                '<input type="text" id="zd" placeholder="Description"><textarea id="zi" rows="2" placeholder="Instructions for students"></textarea><div id="qs" class="qb">' + qCard() + '</div><div style="display:flex;gap:.6rem;flex-wrap:wrap"><button type="button" class="btn-s ghost" data-act="addq">+ Add Question</button><button type="button" class="btn-s ghost" data-act="save" data-pub="0">Save as Draft</button><button type="button" class="btn-s" data-act="save" data-pub="1">Save &amp; Publish</button></div></div>';
+        }
+        function saveQuiz(u, pub) {
+            const title = $('#zt').value.trim(), cid = $('#zc').value, ms = (v) => v ? new Date(v).getTime() : 0, st = ms($('#zst').value), dl = ms($('#zdl').value);
+            const qs = $$('.qcard').map((c) => {
+                const t = c.dataset.type, q = $('.qt', c).value.trim();
+                if (t === 'mc') { const k = $('input[type=radio]:checked', c); return { type: t, q, o: $$('.qo', c).map((x) => x.value.trim()), a: k ? +k.value : 0 }; }
+                const v = $('.qa', c).value.trim();
+                return { type: t, q, a: t === 'enum' ? v.split(/[\n,;]+/).map((s) => s.trim()).filter(Boolean) : v };
+            });
+            const bad = qs.some((x) => !x.q || (x.type === 'mc' ? x.o.some((o) => !o) : x.type !== 'essay' && (Array.isArray(x.a) ? !x.a.length : !x.a)));
+            if (!title || !qs.length || bad) return toast('Add a title and complete every question and its answer key.', 'error');
+            if (cid && !myC(u).some((c) => c.id === cid)) return;
+            if (pub && !cid) return toast('Pick a class to publish this quiz to.', 'error');
+            if (st && dl && dl <= st) return toast('The deadline must be after the opening time.', 'error');
+            const lesson = $('#zl').value.trim();
+            DB.set('quizzes', [...quizzes(), { id: 'z' + Date.now(), title, desc: $('#zd').value.trim(), subject: lesson || 'General', lesson, classId: cid, owner: u.email, ownerName: u.name, published: pub, created: Date.now(), limit: Math.max(0, +$('#zm').value || 0), start: st, deadline: dl, instr: $('#zi').value.trim(), questions: qs }]);
+            toast(pub ? 'Quiz published to your class.' : 'Quiz saved as a draft.', 'success'); tab = 'quizzes'; renderDash();
+        }
+        function tQuizzes(u) {
+            const R = myR(u), l = myQ(u).filter((z) => ok(z.title));
+            return head('My Quizzes', 'Schedules, deadlines and publishing.', [['create', 'Create Quiz', '＋']]) +
+                panel('All Quizzes (' + l.length + ')', null, l.map((z) => rrow('<b>' + esc(z.title) + '</b> <span class="badge ' + (z.published ? 'ok' : 'warn') + '">' + (z.published ? 'Published' : 'Draft') + '</span>', qMeta(z) + ' · ' + R.filter((r) => r.quizId === z.id).length + ' submissions',
+                    '<button class="btn-s ghost" data-act="pub" data-id="' + z.id + '">' + (z.published ? 'Unpublish' : 'Publish') + '</button> <button class="btn-s red" data-act="del" data-id="' + z.id + '">Delete</button>')).join('') || emp('No quizzes yet. Use Create Quiz to build one.'));
+        }
+        function tResults(u) {
+            const R = myR(u).filter((r) => ok(r.name + r.title));
+            if (review) {
+                const r = results().find((x) => x.id === review), z = r && myQ(u).find((x) => x.id === r.quizId);
+                if (z && r.auto) return head('Review: ' + r.name, esc(z.title) + ' · submitted ' + fdt(r.t), [['students', 'Back to Results', '←']]) + '<div class="panel qb">' + qReview(z, r, true) + '<div><button class="btn-s" data-act="grade" data-id="' + r.id + '">Save grades</button></div></div>';
+                review = null;
+            }
+            const n = Date.now();
+            const sum = myQ(u).filter((z) => z.published && z.classId).map((z) => {
+                const c = classes().find((x) => x.id === z.classId), m = c ? c.members.length : 0, S = results().filter((r) => r.quizId === z.id), miss = Math.max(0, m - S.length), over = z.deadline && n > z.deadline ? miss : 0;
+                return rrow('<b>' + esc(z.title) + '</b>', esc(cname(z.classId)) + ' · ' + (z.deadline ? 'due ' + fdt(z.deadline) : 'no deadline'), '<span class="badge ok">Submitted ' + S.length + '</span> <span class="badge">Pending ' + (miss - over) + '</span> <span class="badge warn">Overdue ' + over + '</span> <span class="badge">Avg ' + (S.length ? Math.round(S.reduce((s, r) => s + pct(r), 0) / S.length) : 0) + '%</span>');
+            }).join('');
+            return head('Student Results', 'Class performance, submissions and grading.', [['quizzes', 'My Quizzes', '📘']]) + panel('Class Performance', null, sum || emp('Publish a quiz to a class to see submitted, pending and overdue counts.')) + '<div style="height:1rem"></div>' +
+                panel('Submissions (' + R.length + ')', null, R.length ? '<div style="overflow-x:auto"><table class="tbl"><tr><th>Student</th><th>Quiz</th><th>Score</th><th>Date</th><th></th></tr>' + R.map((r) => '<tr><td>' + esc(r.name) + '<small>' + esc(r.email) + '</small></td><td>' + esc(r.title) + '</td><td>' + badge(r) + ' ' + pct(r) + '%</td><td>' + when(r.t) + '</td><td>' + (r.auto ? '<button class="btn-s ghost" data-act="review" data-id="' + r.id + '">Review</button>' : '') + '</td></tr>').join('') + '</table></div>' : emp('No submissions yet.'));
+        }
+
+        /* ----- Student ----- */
+        const qRow = (z, u) => {
+            const st = qSt(z, u);
+            return rrow('<b>' + esc(z.title) + '</b>', qMeta(z) + (z.instr ? '<br>' + esc(z.instr) : ''), '<span class="badge ' + ({ Available: 'ok', Submitted: 'ok', 'In Progress': 'warn' }[st] || '') + '">' + st + '</span> ' + (st === 'Available' || st === 'In Progress' ? '<button class="btn-s" data-act="take" data-id="' + z.id + '">' + (st === 'Available' ? 'Start' : 'Resume') + '</button>' : ''));
+        };
+        function sDash(u) {
+            const C = sC(u), Q = sQ(u), R = results().filter((r) => r.email === u.email).sort((a, b) => b.t - a.t), open = Q.filter((z) => ['Available', 'In Progress'].includes(qSt(z, u))).length, avg = R.length ? Math.round(R.reduce((s, r) => s + pct(r), 0) / R.length) : 0;
+            return head('Welcome Back, ' + firstName(u), 'Here’s your learning progress today.', [['classes', 'Join a Class', '🏫'], ['quizzes', 'Assigned Quizzes', '📝'], ['practice', 'Practice', '🧠']]) +
+                '<div class="stats">' + stat('🏫', '#EEF2FF', C.length, 'Classes Joined') + stat('📝', '#DCFCE7', open, 'Quizzes to Take') + stat('✅', '#E0F2FE', R.length, 'Submitted') + stat('📈', '#FEF3C7', avg + '%', 'Average Score') + '</div><div class="cols">' +
+                panel('Assigned Quizzes', ['quizzes', 'View All'], Q.slice(0, 4).map((z) => qRow(z, u)).join('') || emp('Join a class to see quizzes from your teacher.')) +
+                panel('Recent Results', ['results', 'View All'], R.slice(0, 4).map((r) => rrow('<b>' + esc(r.title) + '</b>', when(r.t), badge(r))).join('') || emp('Submitted quizzes show here.')) + '</div>';
+        }
+        function sClasses(u) {
+            const C = sC(u);
+            if (cls) {
+                const c = C.find((x) => x.id === cls);
+                if (c) {
+                    const M = mats().filter((m) => m.classId === c.id), Q = sQ(u).filter((z) => z.classId === c.id), used = new Set();
+                    const les = matList(M, false, (ch) => Q.filter((z) => (z.lesson || '').toLowerCase() === ch.toLowerCase()).map((z) => { used.add(z.id); return qRow(z, u); }).join(''));
+                    return head(c.name, esc(c.desc || '') + '<br>Teacher: ' + esc(c.ownerName), [['classes', 'Back to Classes', '←']]) + readPanel(u) + panel('Lessons and Materials', null, les) + '<div style="height:1rem"></div>' + panel('Class Quizzes', null, Q.filter((z) => !used.has(z.id)).map((z) => qRow(z, u)).join('') || emp('No other quizzes assigned yet.'));
+                }
+                cls = null;
+            }
+            return head('My Classes', 'Join a class with the code from your teacher.', [['quizzes', 'Assigned Quizzes', '📝']]) +
+                '<div class="panel qb" style="margin-bottom:1rem"><h2>Join a Class</h2><input type="text" id="jc" placeholder="Enter class code" maxlength="8" style="text-transform:uppercase"><div><button class="btn-s" data-act="join">Join Class</button></div></div>' +
+                panel('Joined Classes (' + C.length + ')', null, C.map((c) => rrow('<b>' + esc(c.name) + '</b>', 'Teacher: ' + esc(c.ownerName) + ' · ' + esc(c.desc || ''), '<button class="btn-s" data-act="openc" data-id="' + c.id + '">Open</button>')).join('') || emp('You have not joined any classes yet.'));
+        }
+        function sQuizzes(u) {
+            const l = sQ(u).filter((z) => ok(z.title));
+            return head('Assigned Quizzes', 'Quizzes from your classes. Each can be submitted once.', [['results', 'Quiz Results', '📊']]) + panel('Quizzes (' + l.length + ')', null, l.map((z) => qRow(z, u)).join('') || emp('No quizzes assigned yet. Join a class first.'));
+        }
+        function sResults(u) {
+            const l = results().filter((r) => r.email === u.email && ok(r.title)).sort((a, b) => b.t - a.t);
+            return head('Quiz Results', 'Your official submissions and teacher grading.', [['quizzes', 'Assigned Quizzes', '📝']]) +
+                panel('History (' + l.length + ')', null, l.length ? '<div style="overflow-x:auto"><table class="tbl"><tr><th>Quiz</th><th>Score</th><th>Progress</th><th>Date</th><th></th></tr>' + l.map((r) => '<tr><td>' + esc(r.title) + '</td><td>' + badge(r) + ' ' + pct(r) + '%</td><td><div class="bar"><i style="width:' + pct(r) + '%"></i></div></td><td>' + when(r.t) + '</td><td>' + (r.auto ? '<button class="btn-s ghost" data-act="view" data-id="' + r.id + '">View</button>' : '') + '</td></tr>').join('') + '</table></div>' : emp('No submissions yet.'));
+        }
+        function sPractice(u) {
+            const P = pract().filter((p) => p.email === u.email).sort((a, b) => b.created - a.created), src = mats().filter((m) => m.ext === 'txt' && sC(u).some((c) => c.id === m.classId));
+            return head('Practice Quizzes', 'Private practice. It never affects class grades.', [['results', 'Official Results', '📊']]) + genPanel(src, true) +
+                panel('My Practice History (' + P.length + ')', null, P.map((p) => { const b = p.attempts.length ? Math.max(...p.attempts.map((a) => a.total ? Math.round(a.score / a.total * 100) : 0)) : null; return rrow('<b>' + esc(p.title) + '</b>', p.questions.length + ' questions · ' + when(p.created) + ' · ' + p.attempts.length + ' attempts', (b != null ? '<span class="badge ok">Best ' + b + '%</span> ' : '') + '<button class="btn-s" data-act="ptake" data-id="' + p.id + '">Practice</button>'); }).join('') || emp('Generated practice quizzes show here.'));
+        }
+        function takeView(u) {
+            const z = taking.z || quizzes().find((x) => x.id === taking.id);
+            if (!z) { taking = null; return ''; }
+            if (taking.res) {
+                const r = taking.res, p = taking.prac;
+                return head(p ? 'Practice Complete' : 'Quiz Complete', p ? 'Score: ' + f1(sc(r)) + ' / ' + r.total + ' (essays are for self-review). This stays private.' : 'Score so far: ' + f1(sc(r)) + ' / ' + r.total + (pend(r) ? ' — essay answers are waiting for your teacher.' : ''), [[p ? 'practice' : 'quizzes', 'Back', '←']]) + panel('Review', null, qReview(z, r, false, p));
+            }
+            const k = taking.prac ? null : atts()[u.email + '|' + z.id], sv = k ? k.ans : [];
+            return '<div class="dhead"><div><h1>' + esc(z.title) + '</h1><p>' + esc(z.instr || z.desc || '') + '</p></div>' + (taking.prac ? '' : '<div class="badge" id="tm" style="font-size:1rem;padding:.5rem .9rem"></div>') + '</div><div class="panel qb" id="tkform">' +
+                z.questions.map((x, i) => '<div class="qcard"><b>' + (i + 1) + '. ' + esc(x.q) + '</b> <span class="badge">' + TYPES[x.type || 'mc'] + '</span>' + qIn(x, i, sv[i]) + '</div>').join('') +
+                '<div><button class="btn-s" data-act="submit">Submit Answers</button> <button class="btn-s ghost" data-act="leave">' + (taking.prac ? 'Cancel' : 'Leave (progress is saved)') + '</button></div></div>';
+        }
+        function submitQuiz(u, auto) {
+            if (taking.prac) {
+                const z = taking.z, ans = collect(z), r = { ans, auto: z.questions.map((x, i) => x.type === 'essay' ? 0 : pts(x, ans[i])), man: {}, total: z.questions.filter((x) => x.type !== 'essay').length, t: Date.now() };
+                const all = pract(), p = all.find((x) => x.id === z.id && x.email === u.email);
+                if (p) { p.attempts.push({ t: r.t, score: sc(r), total: r.total }); DB.set('practice', all); }
+                taking.res = r; body(); return;
+            }
+            const z = quizzes().find((x) => x.id === taking.id);
+            if (!z) return;
+            const ans = collect(z);
+            if (!auto && ans.some((v) => v === -1 || v === '') && !confirm('Some questions are unanswered. Submit anyway?')) return;
+            clearInterval(timer); taking.res = doSubmit(z, u, ans); taking.z = z; body();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        /* ----- Shell ----- */
+        function body() {
+            clearInterval(timer);
+            const u = readUser(), el = $('#dbody');
+            if (!u || !el) return;
+            const T = u.role === 'teacher';
+            if (!T) settle(u);
+            const m = T ? { dash: tDash, classes: tClasses, materials: tMaterials, create: tCreate, quizzes: tQuizzes, students: tResults } : { dash: sDash, classes: sClasses, quizzes: sQuizzes, results: sResults, practice: sPractice };
+            el.innerHTML = taking && !T ? takeView(u) : (m[tab] || m.dash)(u);
+            if (tab === 'create' && T) num();
+            if (taking && !T && !taking.res && !taking.prac && $('#tm')) { tick(); timer = setInterval(tick, 1000); }
+        }
+        function renderDash() {
+            const u = readUser();
+            if (!u) return;
+            const T = u.role === 'teacher';
+            const tabs = T ? [['dash', 'Dashboard', '▦'], ['classes', 'My Classes', '🏫'], ['materials', 'Lessons & Files', '📄'], ['create', 'Create Quiz', '＋'], ['quizzes', 'My Quizzes', '📘'], ['students', 'Student Results', '🎓']] : [['dash', 'Dashboard', '▦'], ['classes', 'My Classes', '🏫'], ['quizzes', 'Assigned Quizzes', '📝'], ['results', 'Quiz Results', '📊'], ['practice', 'Practice Quizzes', '🧠']];
+            $('#view-dash').innerHTML = '<div class="dash"><aside class="side"><div class="brand"><div class="logo-badge">Q</div><div>QuizCraft<small>' + (T ? 'Teacher' : 'Student') + ' Suite</small></div></div>' +
+                tabs.map((t) => '<button data-tab="' + t[0] + '" class="' + (tab === t[0] && !taking ? 'on' : '') + '"><span>' + t[2] + '</span>' + t[1] + '</button>').join('') +
+                '<button class="out" data-act="logout"><span>⎋</span>Logout</button></aside><div class="dmain"><div class="dtop"><input type="search" id="dq" placeholder="Search…" aria-label="Search" value="' + esc(q) + '"><span class="sp"></span><button class="ic" data-act="bell" aria-label="Notifications">🔔</button><button class="ic" data-act="theme" aria-label="Toggle theme">◐</button>' +
+                '<div class="chip"><span class="av">' + esc(firstName(u)[0].toUpperCase()) + '</span><div>' + esc(firstName(u)) + '<small style="display:block;font-weight:500;color:var(--text-muted)">' + cap(u.role) + '</small></div></div></div><div id="dbody"></div></div></div>';
+            $('#dq').addEventListener('input', (e) => { if (tab === 'create' || taking) return; q = e.target.value; body(); });
+            body();
+        }
+        const D = $('#view-dash');
+        const saveProg = () => {
+            const u = readUser();
+            if (!u || !taking || taking.res || taking.prac || !$('#tkform')) return;
+            const z = quizzes().find((x) => x.id === taking.id), a = atts(), k = u.email + '|' + taking.id;
+            if (z && a[k]) { a[k].ans = collect(z); DB.set('att', a); }
+        };
+        D.addEventListener('input', saveProg);
+        D.addEventListener('change', (e) => {
+            const t = e.target, u = readUser();
+            saveProg();
+            if (t.classList.contains('qty')) { const c = t.closest('.qcard'); c.insertAdjacentHTML('beforebegin', qCard({ type: t.value, q: $('.qt', c).value })); c.remove(); num(); }
+            else if (t.id === 'gs') { const m = mats().find((x) => x.id === t.value); if (m && u && (m.owner === u.email || sC(u).some((c) => c.id === m.classId))) $('#gt').value = m.text || ''; }
+            else if (t.id === 'gf' && t.files[0]) {
+                const f = t.files[0];
+                if (!/\.txt$/i.test(f.name)) toast('Only .txt files can be read here. Paste text from PDF, DOCX or PPTX instead.', 'error');
+                else if (f.size > 1024 * 1024) toast('That text file is too large (1 MB max).', 'error');
+                else { const r = new FileReader(); r.onload = () => { $('#gt').value = r.result; }; r.readAsText(f); }
+            }
+        });
+        D.addEventListener('click', (e) => {
+            const t = e.target.closest('[data-tab],[data-act]'), u = readUser();
+            if (!t || !u) return;
+            if (t.dataset.tab) { tab = t.dataset.tab; taking = null; review = null; cls = null; reading = null; renderDash(); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+            const a = t.dataset.act, id = t.dataset.id, T = u.role === 'teacher';
+            if (a === 'logout') navLogout.click();
+            else if (a === 'theme') themeToggle.click();
+            else if (a === 'bell') toast('You have no new notifications.');
+            else if (a === 'closeread') { reading = null; body(); }
+            else if (a === 'read') { const m = mats().find((x) => x.id === id); if (m && (m.owner === u.email || sC(u).some((c) => c.id === m.classId))) { reading = id; body(); } }
+            else if (a === 'open') {
+                const m = mats().find((x) => x.id === id);
+                if (m && (m.owner === u.email || sC(u).some((c) => c.id === m.classId))) { const w = window.open('', '_blank'); fetch(m.data).then((r) => r.blob()).then((b) => { if (w) w.location = URL.createObjectURL(b); }).catch(() => { if (w) w.close(); toast('Could not open that file.', 'error'); }); }
+            }
+            else if (a === 'gen') {
+                const text = $('#gt').value, types = $$('.gtyp:checked').map((x) => x.value), n = Math.min(30, Math.max(1, +$('#gn').value || 5));
+                if (text.trim().length < 60) return toast('Paste or load a few sentences of notes first.', 'error');
+                if (!types.length) return toast('Choose at least one question type.', 'error');
+                const qs = gen(text, types, n, $('#gd').value);
+                if (!qs.length) return toast('Could not build questions from that text. Try longer sentences.', 'error');
+                if (T) { $$('.qcard').forEach((c) => { if (!$('.qt', c).value.trim()) c.remove(); }); qs.forEach((x) => $('#qs').insertAdjacentHTML('beforeend', qCard(x))); num(); toast(qs.length + ' draft questions added. Review and edit them below.', 'success'); }
+                else { const pq = { id: 'p' + Date.now(), email: u.email, title: $('#gtl').value.trim() || 'Practice quiz', created: Date.now(), questions: qs, attempts: [] }; DB.set('practice', [...pract(), pq]); taking = { prac: true, z: pq }; body(); }
+            }
+            else if (T && a === 'mkclass') {
+                const n = $('#cn').value.trim();
+                if (!n) return toast('Enter a class name.', 'error');
+                const all = classes(); all.push({ id: 'c' + Date.now(), name: n, desc: $('#cdsc').value.trim(), code: mkCode(), owner: u.email, ownerName: u.name, members: [] });
+                DB.set('classes', all); toast('Class created. Share its code with your students.', 'success'); body();
+            }
+            else if (T && a === 'copy') { if (navigator.clipboard) navigator.clipboard.writeText(id).then(() => toast('Class code copied.'), () => toast('Class code: ' + id)); else toast('Class code: ' + id); }
+            else if (T && a === 'upload') {
+                const f = $('#mf').files[0], cid = $('#mc').value, ext = f ? (f.name.split('.').pop() || '').toLowerCase() : '';
+                if (!f) return toast('Choose a file to upload.', 'error');
+                if (!['pdf', 'docx', 'pptx', 'txt'].includes(ext)) return toast('Only PDF, DOCX, PPTX and TXT files are allowed.', 'error');
+                if (f.size > 1.5 * 1024 * 1024) return toast('File is too large. The limit is 1.5 MB.', 'error');
+                if (!myC(u).some((c) => c.id === cid)) return;
+                const rd = (m) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r[m](f); });
+                Promise.all([rd('readAsDataURL'), ext === 'txt' ? rd('readAsText') : Promise.resolve('')]).then(([data, text]) => {
+                    const all = mats(); all.push({ id: 'm' + Date.now(), classId: cid, owner: u.email, chapter: $('#mch').value.trim(), title: $('#mti').value.trim() || f.name, fname: f.name, ext, size: f.size, data, text, t: Date.now() });
+                    DB.set('materials', all); toast('File uploaded.', 'success'); body();
+                }).catch(() => toast('Could not read that file.', 'error'));
+            }
+            else if (T && a === 'delmat') { const m = mats().find((x) => x.id === id); if (m && m.owner === u.email && confirm('Delete this file?')) { DB.set('materials', mats().filter((x) => x.id !== id)); body(); } }
+            else if (T && (a === 'pub' || a === 'del')) {
+                const all = quizzes(), z = all.find((x) => x.id === id);
+                if (!z || z.owner !== u.email) return;
+                if (a === 'pub') { if (!z.published && !z.classId) return toast('This quiz has no class. Recreate it with a class selected.', 'error'); z.published = !z.published; DB.set('quizzes', all); toast(z.published ? 'Quiz published.' : 'Quiz moved to drafts.', 'success'); }
+                else if (confirm('Delete "' + z.title + '" and its submissions?')) { DB.set('quizzes', all.filter((x) => x.id !== id)); DB.set('results', results().filter((r) => r.quizId !== id)); }
+                body();
+            }
+            else if (T && a === 'addq') { $('#qs').insertAdjacentHTML('beforeend', qCard()); num(); }
+            else if (T && a === 'rmq') { if ($$('.qcard').length > 1) { t.closest('.qcard').remove(); num(); } else toast('A quiz needs at least one question.'); }
+            else if (T && a === 'save') saveQuiz(u, t.dataset.pub === '1');
+            else if (T && a === 'review') { const r = results().find((x) => x.id === id); if (r && myQ(u).some((z) => z.id === r.quizId)) { review = id; body(); } }
+            else if (T && a === 'grade') {
+                const all = results(), r = all.find((x) => x.id === id);
+                if (!r || !myQ(u).some((z) => z.id === r.quizId)) return;
+                r.man = r.man || {}; $$('[data-g]').forEach((el) => { if (el.value !== '') r.man[el.dataset.g] = Math.min(1, Math.max(0, +el.value || 0)); });
+                DB.set('results', all); toast('Grades saved.', 'success'); body();
+            }
+            else if (!T && a === 'join') {
+                const code = $('#jc').value.trim().toUpperCase(), all = classes(), c = all.find((x) => x.code === code);
+                if (!code) toast('Enter a class code.', 'error');
+                else if (!c) toast('That class code is not valid. Check it with your teacher.', 'error');
+                else if (c.members.some((m) => m.email === u.email)) toast('You have already joined this class.');
+                else { c.members.push({ email: u.email, name: u.name }); DB.set('classes', all); toast('Joined ' + c.name + '!', 'success'); cls = c.id; body(); }
+            }
+    else if (!T & a === 'openc') { 
+        if (sC(u).some((c) => c.id == id)) { /* ... */ } 
+    }
+    else if (!T & a === 'take') { 
+        const z = sQ(u).find((x) => x.id == id); 
+        if (z) { taking = z; body(); } 
+    }
+    else if (!T & a === 'ptake') { 
+        const p = pract().find((x) => x.id == id); 
+        if (p) { taking = p; body(); } 
+    }
+    else if (!T & a === 'view') { 
+        const r = results().find((x) => x.id == id); 
+        if (r) { viewing = r; body(); } 
+    }
+    else if (!T & a === 'submit') { 
+        submitQuiz(u, false); 
+    }
+    else if (!T & a === 'leave') { 
+        taking = null;
+        body();
+    }}
+
+);
+
+
+        render();
+    })();
+
+    </script>
+
+</body>
+    
+    </html>
